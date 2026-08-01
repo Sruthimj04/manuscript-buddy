@@ -17,10 +17,10 @@ import type { Role } from "@/services/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sign in — PubFlow ERP" },
+      { title: "PubFlow ERP" },
       { name: "description", content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review." },
-      { property: "og:title", content: "Sign in — PubFlow ERP" },
-      { property: "og:description", content: "Access the manuscript submission and AI publishing pipeline." },
+      { property: "og:title", content: "PubFlow ERP" },
+      { property: "og:description", content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review." },
     ],
   }),
   component: LoginPage,

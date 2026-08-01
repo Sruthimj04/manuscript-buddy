@@ -79,20 +79,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PubFlow ERP — Book Submission & AI Publishing" },
+      { title: "PubFlow ERP" },
       {
         name: "description",
         content:
-          "Submit manuscripts, run AI pre-flight analysis, and manage editorial review through a single publishing pipeline.",
+          "Sign in to PubFlow ERP to submit manuscripts and track editorial review.",
       },
-      { property: "og:title", content: "PubFlow ERP — Book Submission & AI Publishing" },
+      { property: "og:title", content: "PubFlow ERP" },
       {
         property: "og:description",
-        content: "Manuscript submission, AI analysis, and editorial workflow in one system.",
+        content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "PubFlow ERP" },
+      { name: "twitter:description", content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8be2ef18-af9e-4e37-9a43-15003dff2c7f/id-preview-494c2d19--15caa7bf-e921-4b3e-ac0a-d9975598f899.lovable.app-1785554258938.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8be2ef18-af9e-4e37-9a43-15003dff2c7f/id-preview-494c2d19--15caa7bf-e921-4b3e-ac0a-d9975598f899.lovable.app-1785554258938.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
