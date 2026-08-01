@@ -29,8 +29,8 @@ export async function getManuscript(id: string): Promise<Manuscript | undefined>
 export function generateAIReport(input: {
   title: string;
   genre: string;
-  secondaryGenre?: string;
-  pageCount?: number;
+  secondaryGenre?: string | undefined;
+  pageCount?: number | undefined;
 }): AIReport {
   const base = 62 + Math.floor(Math.random() * 32);
   const primary = 55 + Math.floor(Math.random() * 30);
@@ -56,7 +56,7 @@ export function generateAIReport(input: {
 
 export async function createManuscript(
   payload: Omit<Manuscript, "id" | "timeline" | "notes" | "state" | "editor" | "submittedAt"> & {
-    state?: WorkflowState;
+    state?: WorkflowState | undefined;
   },
 ): Promise<Manuscript> {
   await delay(700);
