@@ -44,19 +44,19 @@ export interface Manuscript {
   state: WorkflowState;
   editor: string | null;
   genre: string;
-  secondaryGenre?: string;
-  audience?: string;
+  secondaryGenre?: string | undefined;
+  audience?: string | undefined;
   keywords: string[];
-  abstract?: string;
-  synopsis?: string;
-  pageCount?: number;
-  launchDate?: string;
-  fileName?: string;
-  fileSize?: number;
+  abstract?: string | undefined;
+  synopsis?: string | undefined;
+  pageCount?: number | undefined;
+  launchDate?: string | undefined;
+  fileName?: string | undefined;
+  fileSize?: number | undefined;
   ai: AIReport | null;
   timeline: TimelineEvent[];
   notes: EditorNote[];
-  rejectionReason?: string;
+  rejectionReason?: string | undefined;
 }
 
 export interface User {
