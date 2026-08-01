@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as ManuscriptIdRouteImport } from './routes/manuscript.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const SubmitRoute = SubmitRouteImport.update({
   path: '/submit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManuscriptIdRoute = ManuscriptIdRouteImport.update({
+  id: '/manuscript/$id',
+  path: '/manuscript/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/submit': typeof SubmitRoute
+  '/manuscript/$id': typeof ManuscriptIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/submit': typeof SubmitRoute
+  '/manuscript/$id': typeof ManuscriptIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/submit': typeof SubmitRoute
+  '/manuscript/$id': typeof ManuscriptIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/submit'
+  fullPaths: '/' | '/dashboard' | '/submit' | '/manuscript/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/submit'
-  id: '__root__' | '/' | '/dashboard' | '/submit'
+  to: '/' | '/dashboard' | '/submit' | '/manuscript/$id'
+  id: '__root__' | '/' | '/dashboard' | '/submit' | '/manuscript/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   SubmitRoute: typeof SubmitRoute
+  ManuscriptIdRoute: typeof ManuscriptIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SubmitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/manuscript/$id': {
+      id: '/manuscript/$id'
+      path: '/manuscript/$id'
+      fullPath: '/manuscript/$id'
+      preLoaderRoute: typeof ManuscriptIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   SubmitRoute: SubmitRoute,
+  ManuscriptIdRoute: ManuscriptIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
