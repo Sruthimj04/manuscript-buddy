@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EditorRouteImport } from './routes/editor'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as ManuscriptIdRouteImport } from './routes/manuscript.$id'
 
@@ -42,6 +43,11 @@ const EditorRoute = EditorRouteImport.update({
   path: '/editor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
   path: '/submit',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
+  '/settings': typeof SettingsRoute
   '/submit': typeof SubmitRoute
   '/manuscript/$id': typeof ManuscriptIdRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
+  '/settings': typeof SettingsRoute
   '/submit': typeof SubmitRoute
   '/manuscript/$id': typeof ManuscriptIdRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
+  '/settings': typeof SettingsRoute
   '/submit': typeof SubmitRoute
   '/manuscript/$id': typeof ManuscriptIdRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/editor'
+    | '/settings'
     | '/submit'
     | '/manuscript/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/editor'
+    | '/settings'
     | '/submit'
     | '/manuscript/$id'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/editor'
+    | '/settings'
     | '/submit'
     | '/manuscript/$id'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   DashboardRoute: typeof DashboardRoute
   EditorRoute: typeof EditorRoute
+  SettingsRoute: typeof SettingsRoute
   SubmitRoute: typeof SubmitRoute
   ManuscriptIdRoute: typeof ManuscriptIdRoute
 }
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/submit': {
       id: '/submit'
       path: '/submit'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   DashboardRoute: DashboardRoute,
   EditorRoute: EditorRoute,
+  SettingsRoute: SettingsRoute,
   SubmitRoute: SubmitRoute,
   ManuscriptIdRoute: ManuscriptIdRoute,
 }
