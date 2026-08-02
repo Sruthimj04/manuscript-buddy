@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { BookOpen, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { LoremMark } from "@/components/pub/LoremMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,17 +59,19 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center gap-2">
+        <div className="mb-8 flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-md bg-foreground text-background">
-            <BookOpen className="size-4" />
+            <LoremMark className="size-5" />
           </span>
-          <span className="text-lg font-semibold tracking-tight">LOREM</span>
+          <span className="text-lg font-semibold uppercase tracking-[0.3em]">LOREM</span>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Book submission &amp; AI-assisted publishing workspace.
+          <h1 className="font-serif text-3xl font-normal leading-tight tracking-tight">
+            You wrote it. We'll do the rest.
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            A real editor. A fair deal. From first submission to published book — we're with you the whole way.
           </p>
 
           <form className="mt-6 space-y-4" onSubmit={submit} noValidate>
