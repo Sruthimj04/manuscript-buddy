@@ -9,9 +9,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Author Dashboard — PubFlow ERP" },
+      { title: "Author Dashboard — LOREM" },
       { name: "description", content: "Track manuscript pipeline status, AI scores, and editorial actions." },
-      { property: "og:title", content: "Author Dashboard — PubFlow ERP" },
+      { property: "og:title", content: "Author Dashboard — LOREM" },
       { property: "og:description", content: "Live pipeline status for every manuscript you have submitted." },
     ],
   }),
@@ -43,9 +43,11 @@ function DashboardPage() {
     <AppShell>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Manuscript overview</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Every submission, its pipeline stage, and what needs your attention next.
+          <h1 className="font-serif text-3xl font-normal tracking-tight sm:text-4xl">
+            You wrote it. We'll do the rest.
+          </h1>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+            A real editor. A fair deal. From first submission to published book — we're with you the whole way.
           </p>
         </div>
         <Button asChild>

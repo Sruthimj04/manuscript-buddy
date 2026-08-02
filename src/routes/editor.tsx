@@ -30,9 +30,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/editor")({
   head: () => ({
     meta: [
-      { title: "Editor Review Queue — PubFlow ERP" },
+      { title: "Editor Review Queue — LOREM" },
       { name: "description", content: "Review pending manuscripts and approve, request revisions, or reject." },
-      { property: "og:title", content: "Editor Review Queue — PubFlow ERP" },
+      { property: "og:title", content: "Editor Review Queue — LOREM" },
       { property: "og:description", content: "Editorial decisions with structured feedback and rejection reasons." },
     ],
   }),

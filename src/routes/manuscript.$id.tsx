@@ -14,9 +14,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/manuscript/$id")({
   head: () => ({
     meta: [
-      { title: "Manuscript & AI Report — PubFlow ERP" },
+      { title: "Manuscript & AI Report — LOREM" },
       { name: "description", content: "AI analysis, workflow timeline, and editor feedback for a manuscript." },
-      { property: "og:title", content: "Manuscript & AI Report — PubFlow ERP" },
+      { property: "og:title", content: "Manuscript & AI Report — LOREM" },
       { property: "og:description", content: "Genre confidence, readability, pacing, audit log, and revision uploads." },
     ],
   }),

@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, PlusCircle, BarChart3, Settings, Shield, PenLine } from "lucide-react";
+import { LayoutDashboard, PlusCircle, BarChart3, Settings, Shield, PenLine } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { LoremMark } from "@/components/pub/LoremMark";
 import { useApp } from "@/store/app-store";
 import type { Role } from "@/services/types";
 
@@ -57,9 +58,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
             <span className="flex size-8 items-center justify-center rounded-md bg-foreground text-background">
-              <BookOpen className="size-4" />
+              <LoremMark className="size-5" />
             </span>
-            <span className="text-base font-semibold tracking-tight">PubFlow ERP</span>
+            <span className="text-base font-semibold uppercase tracking-[0.28em]">LOREM</span>
           </Link>
 
           <nav className="order-last flex w-full gap-1 overflow-x-auto md:order-none md:w-auto">

@@ -7,9 +7,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/analytics")({
   head: () => ({
     meta: [
-      { title: "AI Analytics — PubFlow ERP" },
+      { title: "AI Analytics — LOREM" },
       { name: "description", content: "Aggregate AI scores, readability, and marketability across all manuscripts." },
-      { property: "og:title", content: "AI Analytics — PubFlow ERP" },
+      { property: "og:title", content: "AI Analytics — LOREM" },
       { property: "og:description", content: "Portfolio-level view of AI pre-flight analysis results." },
     ],
   }),

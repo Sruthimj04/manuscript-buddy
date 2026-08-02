@@ -9,9 +9,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — PubFlow ERP" },
-      { name: "description", content: "Manage your PubFlow profile, notification preferences, and session." },
-      { property: "og:title", content: "Settings — PubFlow ERP" },
+      { title: "Settings — LOREM" },
+      { name: "description", content: "Manage your LOREM profile, notification preferences, and session." },
+      { property: "og:title", content: "Settings — LOREM" },
       { property: "og:description", content: "Profile and notification preferences for the publishing workspace." },
     ],
   }),

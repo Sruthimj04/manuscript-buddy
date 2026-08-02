@@ -20,9 +20,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin Panel — PubFlow ERP" },
+      { title: "Admin Panel — LOREM" },
       { name: "description", content: "Global pipeline oversight: assign editors, advance workflow, publish titles." },
-      { property: "og:title", content: "Admin Panel — PubFlow ERP" },
+      { property: "og:title", content: "Admin Panel — LOREM" },
       { property: "og:description", content: "Manage every submission across the publishing pipeline." },
     ],
   }),
