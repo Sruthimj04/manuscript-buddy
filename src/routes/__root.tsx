@@ -79,22 +79,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PubFlow ERP" },
+      { title: "LOREM" },
       {
         name: "description",
         content:
-          "Sign in to PubFlow ERP to submit manuscripts and track editorial review.",
+          "Sign in to LOREM to submit manuscripts and track editorial review.",
       },
-      { property: "og:title", content: "PubFlow ERP" },
+      { property: "og:title", content: "LOREM" },
       {
         property: "og:description",
-        content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review.",
+        content: "Sign in to LOREM to submit manuscripts and track editorial review.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "PubFlow ERP" },
-      { name: "twitter:description", content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review." },
+      { name: "twitter:title", content: "LOREM" },
+      { name: "twitter:description", content: "Sign in to LOREM to submit manuscripts and track editorial review." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8be2ef18-af9e-4e37-9a43-15003dff2c7f/id-preview-494c2d19--15caa7bf-e921-4b3e-ac0a-d9975598f899.lovable.app-1785554258938.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8be2ef18-af9e-4e37-9a43-15003dff2c7f/id-preview-494c2d19--15caa7bf-e921-4b3e-ac0a-d9975598f899.lovable.app-1785554258938.png" },
     ],

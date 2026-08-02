@@ -16,7 +16,7 @@ interface AppState {
 
 const AppContext = createContext<AppState | null>(null);
 
-const DEFAULT_USER: User = { name: "Amara Nwosu", email: "amara@pubflow.io", role: "author" };
+const DEFAULT_USER: User = { name: "Amara Nwosu", email: "amara@lorempress.co", role: "author" };
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

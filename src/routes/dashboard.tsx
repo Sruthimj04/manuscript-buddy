@@ -9,9 +9,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Author Dashboard — PubFlow ERP" },
+      { title: "Author Dashboard — LOREM" },
       { name: "description", content: "Track manuscript pipeline status, AI scores, and editorial actions." },
-      { property: "og:title", content: "Author Dashboard — PubFlow ERP" },
+      { property: "og:title", content: "Author Dashboard — LOREM" },
       { property: "og:description", content: "Live pipeline status for every manuscript you have submitted." },
     ],
   }),

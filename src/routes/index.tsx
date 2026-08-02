@@ -17,10 +17,10 @@ import type { Role } from "@/services/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PubFlow ERP" },
-      { name: "description", content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review." },
-      { property: "og:title", content: "PubFlow ERP" },
-      { property: "og:description", content: "Sign in to PubFlow ERP to submit manuscripts and track editorial review." },
+      { title: "LOREM" },
+      { name: "description", content: "Sign in to LOREM to submit manuscripts and track editorial review." },
+      { property: "og:title", content: "LOREM" },
+      { property: "og:description", content: "Sign in to LOREM to submit manuscripts and track editorial review." },
     ],
   }),
   component: LoginPage,
@@ -35,7 +35,7 @@ const NAMES: Record<Role, string> = {
 function LoginPage() {
   const { login } = useApp();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("amara@pubflow.io");
+  const [email, setEmail] = useState("amara@lorempress.co");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("author");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -62,7 +62,7 @@ function LoginPage() {
           <span className="flex size-9 items-center justify-center rounded-md bg-foreground text-background">
             <BookOpen className="size-4" />
           </span>
-          <span className="text-lg font-semibold tracking-tight">PubFlow ERP</span>
+          <span className="text-lg font-semibold tracking-tight">LOREM</span>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
@@ -79,7 +79,7 @@ function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@publisher.com"
+                placeholder="you@lorempress.co"
                 aria-invalid={!!errors.email}
               />
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}

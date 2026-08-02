@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="flex size-8 items-center justify-center rounded-md bg-foreground text-background">
               <BookOpen className="size-4" />
             </span>
-            <span className="text-base font-semibold tracking-tight">PubFlow ERP</span>
+            <span className="text-base font-semibold tracking-tight">LOREM</span>
           </Link>
 
           <nav className="order-last flex w-full gap-1 overflow-x-auto md:order-none md:w-auto">

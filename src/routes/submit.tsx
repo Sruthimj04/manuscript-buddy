@@ -42,9 +42,9 @@ import { useApp } from "@/store/app-store";
 export const Route = createFileRoute("/submit")({
   head: () => ({
     meta: [
-      { title: "New Submission — PubFlow ERP" },
+      { title: "New Submission — LOREM" },
       { name: "description", content: "Five-step manuscript submission wizard with PDF upload and AI pre-flight scan." },
-      { property: "og:title", content: "New Submission — PubFlow ERP" },
+      { property: "og:title", content: "New Submission — LOREM" },
       { property: "og:description", content: "Submit a manuscript with metadata, PDF upload, and AI pre-flight analysis." },
     ],
   }),
