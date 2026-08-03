@@ -36,12 +36,12 @@ export interface AIReport {
   titleMatched: boolean;
 }
 
-export interface Manuscript {
+/** Fields shared by every manuscript, regardless of workflow state. */
+export interface ManuscriptBase {
   id: string;
   title: string;
   author: string;
   submittedAt: string;
-  state: WorkflowState;
   editor: string | null;
   genre: string;
   secondaryGenre?: string | undefined;
@@ -56,7 +56,66 @@ export interface Manuscript {
   ai: AIReport | null;
   timeline: TimelineEvent[];
   notes: EditorNote[];
-  rejectionReason?: string | undefined;
+}
+
+/** States other than "Rejected" never carry a rejection reason. */
+interface NoRejection {
+  rejectionReason?: undefined;
+}
+
+export interface DraftManuscript extends ManuscriptBase, NoRejection {
+  state: "Draft";
+}
+export interface ProcessingManuscript extends ManuscriptBase, NoRejection {
+  state: "AI Processing";
+}
+export interface PendingManuscript extends ManuscriptBase, NoRejection {
+  state: "Pending Editor Review";
+}
+export interface RevisionsRequestedManuscript extends ManuscriptBase, NoRejection {
+  state: "Revisions Requested";
+}
+export interface ApprovedManuscript extends ManuscriptBase, NoRejection {
+  state: "Approved";
+}
+export interface PublishedManuscript extends ManuscriptBase, NoRejection {
+  state: "Published";
+}
+export interface RejectedManuscript extends ManuscriptBase {
+  state: "Rejected";
+  /** Required: a rejection is only valid with a documented reason. */
+  rejectionReason: string;
+}
+
+export type Manuscript =
+  | DraftManuscript
+  | ProcessingManuscript
+  | PendingManuscript
+  | RevisionsRequestedManuscript
+  | ApprovedManuscript
+  | PublishedManuscript
+  | RejectedManuscript;
+
+export function isRejected(m: Manuscript): m is RejectedManuscript {
+  return m.state === "Rejected";
+}
+
+export interface ListManuscriptsOptions {
+  page?: number | undefined;
+  limit?: number | undefined;
+  sortBy?: ManuscriptSortKey | undefined;
+  sortDir?: SortDirection | undefined;
+}
+
+export type ManuscriptSortKey = "title" | "author" | "submittedAt" | "aiScore" | "state";
+export type SortDirection = "asc" | "desc";
+
+export interface Paginated<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 export interface User {
