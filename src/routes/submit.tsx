@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Check,
   ChevronLeft,
@@ -71,7 +71,8 @@ function SubmitPage() {
   const [pageCount, setPageCount] = useState("");
   const [launchDate, setLaunchDate] = useState("");
 
-  const [file, setFile] = useState<{ name: string; size: number } | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [uploadPct, setUploadPct] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -86,6 +87,18 @@ function SubmitPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!file) {
+      setPdfUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPdfUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
 
   const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0);
 
@@ -103,7 +116,7 @@ function SubmitPage() {
       return;
     }
     setFileError(null);
-    setFile({ name: f.name, size: f.size });
+    setFile(f);
     setUploading(true);
     setUploadPct(0);
     const timer = setInterval(() => {
@@ -439,16 +452,13 @@ function SubmitPage() {
                 </div>
               </div>
               <div className="flex items-center justify-center bg-muted p-6">
-                <div className="aspect-[3/4] w-full max-w-xs border border-border bg-background p-6 shadow-sm">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{genre || "Genre"}</p>
-                  <p className="mt-6 text-lg font-semibold leading-tight">{title || "Untitled manuscript"}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">{user?.name}</p>
-                  <div className="mt-6 space-y-1.5">
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <div key={i} className="h-1.5 rounded bg-muted" style={{ width: `${60 + ((i * 7) % 40)}%` }} />
-                    ))}
+                {pdfUrl ? (
+                  <iframe src={pdfUrl} className="w-full h-[600px] rounded border" />
+                ) : (
+                  <div className="aspect-[3/4] w-full max-w-xs border border-border bg-background p-6 shadow-sm flex flex-col items-center justify-center">
+                    <p className="text-sm text-muted-foreground">No manuscript file uploaded</p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
