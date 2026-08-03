@@ -41,7 +41,7 @@ function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Active role</Label>
-              <Input value={role} readOnly className="capitalize" />
+              <Input value={role ?? ""} readOnly className="capitalize" />
             </div>
           </div>
         </div>

@@ -1,62 +1,73 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, PlusCircle, BarChart3, Settings, Shield, PenLine } from "lucide-react";
-import type { ReactNode } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { LayoutDashboard, PlusCircle, BarChart3, Settings, Shield, PenLine, LogOut, ChevronDown } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { LoremMark } from "@/components/pub/LoremMark";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useApp } from "@/store/app-store";
 import type { Role } from "@/services/types";
 
-const ROLES: { id: Role; label: string }[] = [
-  { id: "author", label: "Author View" },
-  { id: "editor", label: "Editor View" },
-  { id: "admin", label: "Admin View" },
-];
+export const ROLE_HOME: Record<Role, string> = {
+  author: "/dashboard",
+  editor: "/editor",
+  admin: "/admin",
+};
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/submit", label: "New Submission", icon: PlusCircle },
-  { to: "/analytics", label: "AI Analytics", icon: BarChart3 },
-  { to: "/settings", label: "Settings", icon: Settings },
-] as const;
+const NAV_BY_ROLE: Record<Role, { to: string; label: string; icon: typeof LayoutDashboard }[]> = {
+  author: [
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/submit", label: "New Submission", icon: PlusCircle },
+    { to: "/analytics", label: "AI Analytics", icon: BarChart3 },
+    { to: "/settings", label: "Settings", icon: Settings },
+  ],
+  editor: [
+    { to: "/editor", label: "Review Queue", icon: PenLine },
+    { to: "/analytics", label: "AI Analytics", icon: BarChart3 },
+    { to: "/settings", label: "Settings", icon: Settings },
+  ],
+  admin: [
+    { to: "/admin", label: "Admin Panel", icon: Shield },
+    { to: "/analytics", label: "AI Analytics", icon: BarChart3 },
+    { to: "/settings", label: "Settings", icon: Settings },
+  ],
+};
 
-export function AppShell({ children }: { children: ReactNode }) {
-  const { role, setRole, user } = useApp();
+export function AppShell({ children, allow }: { children: ReactNode; allow?: Role[] }) {
+  const { role, user, logout } = useApp();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const roleNav = [
-    ...NAV,
-    ...(role === "editor" ? [{ to: "/editor", label: "Review Queue", icon: PenLine } as const] : []),
-    ...(role === "admin" ? [{ to: "/admin", label: "Admin Panel", icon: Shield } as const] : []),
-  ];
+  const authorized = !!role && (!allow || allow.includes(role));
+
+  useEffect(() => {
+    if (!role) {
+      void navigate({ to: "/", replace: true });
+    } else if (!authorized) {
+      void navigate({ to: ROLE_HOME[role], replace: true });
+    }
+  }, [role, authorized, navigate]);
+
+  if (!role || !authorized) return null;
+
+  const roleNav = NAV_BY_ROLE[role];
+
+  function handleLogout() {
+    logout();
+    void navigate({ to: "/", replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 border-b border-border bg-foreground text-background">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-2 sm:px-6">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-70">Dev Control</span>
-          <div className="flex flex-wrap gap-1">
-            {ROLES.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => setRole(r.id)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                  role === r.id
-                    ? "bg-background text-foreground"
-                    : "bg-background/10 text-background hover:bg-background/20",
-                )}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-          <span className="ml-auto hidden text-[11px] opacity-70 sm:block">Mock mode · session state only</span>
-        </div>
-      </div>
-
-      <header className="sticky top-[41px] z-40 border-b border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to={ROLE_HOME[role]} className="flex items-center gap-2">
             <span className="flex size-8 items-center justify-center rounded-md bg-foreground text-background">
               <LoremMark className="size-5" />
             </span>
@@ -85,13 +96,33 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium leading-tight">{user?.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{role}</p>
-            </div>
-            <span className="rounded-full border border-foreground px-2.5 py-0.5 text-xs font-medium capitalize">
-              {role}
-            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-left transition-colors hover:bg-muted">
+                <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background">
+                  {user?.name?.charAt(0) ?? "U"}
+                </span>
+                <span className="hidden sm:block">
+                  <span className="block text-sm font-medium leading-tight">{user?.name}</span>
+                  <span className="block text-xs capitalize text-muted-foreground">{role}</span>
+                </span>
+                <ChevronDown className="size-4 text-muted-foreground" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <span className="block text-sm">{user?.name}</span>
+                  <span className="block text-xs font-normal text-muted-foreground">{user?.email}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="cursor-pointer">
+                    <Settings className="size-4" /> Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="size-4" /> Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

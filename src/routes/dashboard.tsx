@@ -40,7 +40,7 @@ function DashboardPage() {
     manuscripts.find((m) => m.state !== "Published" && m.state !== "Rejected") ?? manuscripts[0] ?? null;
 
   return (
-    <AppShell>
+    <AppShell allow={["author"]}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-3xl font-normal tracking-tight sm:text-4xl">

@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { LoremMark } from "@/components/pub/LoremMark";
+import { ROLE_HOME } from "@/components/pub/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,13 +35,17 @@ const NAMES: Record<Role, string> = {
 };
 
 function LoginPage() {
-  const { login } = useApp();
+  const { login, role: activeRole } = useApp();
   const navigate = useNavigate();
   const [email, setEmail] = useState("amara@lorempress.co");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("author");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (activeRole) void navigate({ to: ROLE_HOME[activeRole], replace: true });
+  }, [activeRole, navigate]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,7 +57,7 @@ function LoginPage() {
     setSubmitting(true);
     setTimeout(() => {
       login({ name: NAMES[role], email, role });
-      void navigate({ to: "/dashboard" });
+      void navigate({ to: ROLE_HOME[role], replace: true });
     }, 500);
   }
 
