@@ -187,7 +187,7 @@ function SubmitPage() {
   }
 
   return (
-    <AppShell>
+    <AppShell allow={["author"]}>
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">New submission</h1>
       <p className="mt-1 text-sm text-muted-foreground">Five steps from metadata to editorial queue.</p>
 

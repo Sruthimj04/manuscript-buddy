@@ -42,7 +42,7 @@ function AdminPage() {
   }
 
   return (
-    <AppShell>
+    <AppShell allow={["admin"]}>
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Admin dashboard</h1>
       <p className="mt-1 text-sm text-muted-foreground">Every submission in the pipeline, with override controls.</p>
 
