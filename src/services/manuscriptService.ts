@@ -1,5 +1,14 @@
 import { initialManuscripts } from "./mockData";
-import type { AIReport, Manuscript, WorkflowState } from "./types";
+import type {
+  AIReport,
+  ListManuscriptsOptions,
+  Manuscript,
+  ManuscriptBase,
+  ManuscriptSortKey,
+  Paginated,
+  SortDirection,
+  WorkflowState,
+} from "./types";
 
 /**
  * Mock data layer. Every function is async so that swapping the bodies for
@@ -16,9 +25,62 @@ function event(actor: string, action: string) {
   return { id: crypto.randomUUID(), actor, action, timestamp: new Date().toISOString() };
 }
 
-export async function listManuscripts(): Promise<Manuscript[]> {
+/**
+ * Narrowing helper: the discriminated union is enforced at the API surface, but
+ * internally the mock store builds records dynamically from a runtime state.
+ */
+const asManuscript = (
+  m: ManuscriptBase & { state: WorkflowState; rejectionReason?: string | undefined },
+): Manuscript => m as Manuscript;
+
+function sortValue(m: Manuscript, key: ManuscriptSortKey): string | number {
+  switch (key) {
+    case "aiScore":
+      return m.ai?.score ?? -1;
+    case "submittedAt":
+      return new Date(m.submittedAt).getTime();
+    case "title":
+      return m.title.toLowerCase();
+    case "author":
+      return m.author.toLowerCase();
+    case "state":
+      return m.state.toLowerCase();
+  }
+}
+
+export function sortManuscripts(
+  list: Manuscript[],
+  sortBy: ManuscriptSortKey,
+  sortDir: SortDirection = "desc",
+): Manuscript[] {
+  const dir = sortDir === "asc" ? 1 : -1;
+  return [...list].sort((a, b) => {
+    const av = sortValue(a, sortBy);
+    const bv = sortValue(b, sortBy);
+    if (av === bv) return 0;
+    return av > bv ? dir : -dir;
+  });
+}
+
+export async function listManuscripts(options: ListManuscriptsOptions = {}): Promise<Manuscript[]> {
   await delay(220);
-  return clone(db);
+  const { page, limit, sortBy, sortDir = "desc" } = options;
+  let rows = clone(db);
+  if (sortBy) rows = sortManuscripts(rows, sortBy, sortDir);
+  if (limit && limit > 0) {
+    const current = Math.max(1, page ?? 1);
+    rows = rows.slice((current - 1) * limit, current * limit);
+  }
+  return rows;
+}
+
+export async function listManuscriptsPaged(
+  options: ListManuscriptsOptions = {},
+): Promise<Paginated<Manuscript>> {
+  const { page = 1, limit = 10 } = options;
+  const total = db.length;
+  const items = await listManuscripts({ ...options, page, limit });
+  return { items, page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) };
 }
 
 export async function getManuscript(id: string): Promise<Manuscript | undefined> {
@@ -61,18 +123,16 @@ export async function createManuscript(
 ): Promise<Manuscript> {
   await delay(700);
   counter += 1;
-  const record: Manuscript = {
+  const record = asManuscript({
     ...payload,
     id: `MS-${counter}`,
     submittedAt: new Date().toISOString(),
-    state: payload.state ?? "Pending Editor Review",
+    // New submissions always enter the AI pre-flight queue first.
+    state: payload.state ?? "AI Processing",
     editor: null,
-    timeline: [
-      event(payload.author, "Manuscript submitted"),
-      event("AI Engine", "AI processing completed"),
-    ],
+    timeline: [event(payload.author, "Manuscript submitted"), event("AI Engine", "AI processing started")],
     notes: [],
-  };
+  });
   db = [record, ...db];
   return clone(record);
 }
@@ -86,7 +146,11 @@ export async function updateState(
   await delay();
   db = db.map((m) =>
     m.id === id
-      ? { ...m, state, timeline: [...m.timeline, event(actor, action ?? `Status changed to ${state}`)] }
+      ? asManuscript({
+          ...m,
+          state,
+          timeline: [...m.timeline, event(actor, action ?? `Status changed to ${state}`)],
+        })
       : m,
   );
   return clone(db.find((m) => m.id === id));
@@ -96,11 +160,11 @@ export async function assignEditor(id: string, editor: string, actor: string) {
   await delay();
   db = db.map((m) =>
     m.id === id
-      ? {
+      ? asManuscript({
           ...m,
           editor: editor === "Unassigned" ? null : editor,
           timeline: [...m.timeline, event(actor, `Editor set to ${editor}`)],
-        }
+        })
       : m,
   );
   return clone(db.find((m) => m.id === id));
@@ -113,6 +177,9 @@ export async function addEditorDecision(
   feedback?: string,
   rejectionReason?: string,
 ) {
+  if (decision === "reject" && !rejectionReason?.trim()) {
+    throw new Error("400: Rejection reason required");
+  }
   await delay(600);
   const stateMap = { approve: "Approved", revise: "Revisions Requested", reject: "Rejected" } as const;
   const labelMap = {
@@ -122,7 +189,7 @@ export async function addEditorDecision(
   } as const;
   db = db.map((m) => {
     if (m.id !== id) return m;
-    return {
+    return asManuscript({
       ...m,
       state: stateMap[decision],
       rejectionReason: decision === "reject" ? rejectionReason : m.rejectionReason,
@@ -131,7 +198,7 @@ export async function addEditorDecision(
         ? [...m.notes, { id: crypto.randomUUID(), author: actor, createdAt: new Date().toISOString(), body: feedback }]
         : m.notes,
       timeline: [...m.timeline, event(actor, labelMap[decision])],
-    };
+    });
   });
   return clone(db.find((m) => m.id === id));
 }
@@ -140,12 +207,12 @@ export async function uploadRevision(id: string, fileName: string, actor: string
   await delay(800);
   db = db.map((m) =>
     m.id === id
-      ? {
+      ? asManuscript({
           ...m,
           fileName,
           state: "Pending Editor Review" as WorkflowState,
           timeline: [...m.timeline, event(actor, `Uploaded revised draft (${fileName})`)],
-        }
+        })
       : m,
   );
   return clone(db.find((m) => m.id === id));
