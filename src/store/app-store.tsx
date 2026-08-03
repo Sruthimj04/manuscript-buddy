@@ -4,23 +4,19 @@ import type { Manuscript, Role, User } from "@/services/types";
 
 interface AppState {
   user: User | null;
-  role: Role;
+  role: Role | null;
   manuscripts: Manuscript[];
   loading: boolean;
   error: string | null;
   login: (user: User) => void;
   logout: () => void;
-  setRole: (role: Role) => void;
   refresh: () => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
 
-const DEFAULT_USER: User = { name: "Amara Nwosu", email: "amara@lorempress.co", role: "author" };
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<Role>("author");
   const [manuscripts, setManuscripts] = useState<Manuscript[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,20 +39,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppState>(
     () => ({
-      user: user ?? DEFAULT_USER,
-      role,
+      user,
+      role: user?.role ?? null,
       manuscripts,
       loading,
       error,
-      login: (u) => {
-        setUser(u);
-        setRole(u.role);
-      },
+      login: (u: User) => setUser(u),
       logout: () => setUser(null),
-      setRole,
       refresh,
     }),
-    [user, role, manuscripts, loading, error, refresh],
+    [user, manuscripts, loading, error, refresh],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
