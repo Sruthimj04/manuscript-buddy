@@ -61,6 +61,7 @@ export function ManuscriptTable({
   onPublish: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
+  const [stateFilter, setStateFilter] = useState<string>("all");
   const [editorFilter, setEditorFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "submittedAt", dir: "desc" });
@@ -74,6 +75,7 @@ export function ManuscriptTable({
       if (q && ![m.title, m.author, m.id, m.genre, m.editor ?? ""].join(" ").toLowerCase().includes(q)) return false;
       if (filter?.states && !filter.states.includes(m.state)) return false;
       if (filter?.stage && stageOf(m) !== filter.stage) return false;
+      if (stateFilter !== "all" && m.state !== stateFilter) return false;
       if (editorFilter !== "all" && (m.editor ?? "Unassigned") !== editorFilter) return false;
       if (priorityFilter !== "all" && meta.priority !== priorityFilter) return false;
       return true;
@@ -91,7 +93,7 @@ export function ManuscriptTable({
       return av === bv ? 0 : av > bv ? dir : -dir;
     });
     return list;
-  }, [manuscripts, search, filter, editorFilter, priorityFilter, sort]);
+  }, [manuscripts, search, filter, stateFilter, editorFilter, priorityFilter, sort]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, totalPages);
@@ -138,11 +140,10 @@ export function ManuscriptTable({
           />
         </div>
         <Select
-          value={filter?.states?.length === 1 ? (filter.states[0] as string) : "all"}
+          value={stateFilter}
           onValueChange={(v) => {
-            onClearFilter();
-            if (v !== "all") setPage(1);
-            if (v !== "all") onForceStateFilter(v as WorkflowState);
+            setStateFilter(v);
+            setPage(1);
           }}
         >
           <SelectTrigger className="w-44" aria-label="Filter by state">
@@ -383,8 +384,4 @@ export function ManuscriptTable({
       )}
     </section>
   );
-
-  function onForceStateFilter(_state: WorkflowState) {
-    /* state chips are driven by the parent filter; retained for clarity */
-  }
 }
