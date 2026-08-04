@@ -9,7 +9,6 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarInset,
-  SidebarItemProps,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -46,7 +45,7 @@ function NavItem({
   className,
 }: {
   to: string;
-  icon?: (props: React.SVGProps<SVGSVGElement>) => JSX.Element;
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   children: ReactNode;
   className?: string;
 }) {
