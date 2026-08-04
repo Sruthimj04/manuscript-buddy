@@ -29,7 +29,7 @@ import {
  * new styles and uses the exported sidebar building blocks.
  */
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/_layout")({
   head: () => ({
     meta: [
       { title: "Admin — LOREM" },

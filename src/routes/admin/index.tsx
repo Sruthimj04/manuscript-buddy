@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
  * Content will be added later. For now it preserves layout & navigation.
  */
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/")({
   component: AdminOverviewPlaceholder,
 });
 
