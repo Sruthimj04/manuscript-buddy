@@ -542,5 +542,3 @@ export function AdminOverview({ name, manuscripts, loading, onFilter, onOpen }: 
   );
 }
 
-export { Badge as AdminBadge };
-export { Button as AdminButton };
