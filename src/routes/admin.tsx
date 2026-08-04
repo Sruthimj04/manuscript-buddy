@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/pub/AppShell";
+import { AdminOverview } from "@/components/pub/AdminOverview";
 import { StatusBadge } from "@/components/pub/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,10 +44,12 @@ function AdminPage() {
 
   return (
     <AppShell allow={["admin"]}>
-      <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Admin dashboard</h1>
+      <AdminOverview {...(user?.name ? { name: user.name } : {})} />
+
+      <h2 className="mt-8 text-xl font-semibold tracking-tight">All submissions</h2>
       <p className="mt-1 text-sm text-muted-foreground">Every submission in the pipeline, with override controls.</p>
 
-      <section className="mt-6 rounded-xl border border-border bg-card">
+      <section className="mt-4 rounded-xl border border-border bg-card">
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Loading pipeline…
