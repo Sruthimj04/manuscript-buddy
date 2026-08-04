@@ -16,6 +16,11 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
+import { Route as AdminEditorsRouteImport } from './routes/admin/editors'
+import { Route as AdminManuscriptsRouteImport } from './routes/admin/manuscripts'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as ManuscriptIdRouteImport } from './routes/manuscript.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +58,30 @@ const SubmitRoute = SubmitRouteImport.update({
   path: '/submit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLayoutRoute = AdminLayoutRouteImport.update({
+  id: '/_layout',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEditorsRoute = AdminEditorsRouteImport.update({
+  id: '/editors',
+  path: '/editors',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminManuscriptsRoute = AdminManuscriptsRouteImport.update({
+  id: '/manuscripts',
+  path: '/manuscripts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ManuscriptIdRoute = ManuscriptIdRouteImport.update({
   id: '/manuscript/$id',
   path: '/manuscript/$id',
@@ -61,34 +90,46 @@ const ManuscriptIdRoute = ManuscriptIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
   '/submit': typeof SubmitRoute
+  '/admin/editors': typeof AdminEditorsRoute
+  '/admin/manuscripts': typeof AdminManuscriptsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/manuscript/$id': typeof ManuscriptIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
   '/submit': typeof SubmitRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/editors': typeof AdminEditorsRoute
+  '/admin/manuscripts': typeof AdminManuscriptsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/manuscript/$id': typeof ManuscriptIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
   '/submit': typeof SubmitRoute
+  '/admin/_layout': typeof AdminLayoutRoute
+  '/admin/editors': typeof AdminEditorsRoute
+  '/admin/manuscripts': typeof AdminManuscriptsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/manuscript/$id': typeof ManuscriptIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,16 +141,23 @@ export interface FileRouteTypes {
     | '/editor'
     | '/settings'
     | '/submit'
+    | '/admin/editors'
+    | '/admin/manuscripts'
+    | '/admin/settings'
     | '/manuscript/$id'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/analytics'
     | '/dashboard'
     | '/editor'
     | '/settings'
     | '/submit'
+    | '/admin'
+    | '/admin/editors'
+    | '/admin/manuscripts'
+    | '/admin/settings'
     | '/manuscript/$id'
   id:
     | '__root__'
@@ -120,12 +168,17 @@ export interface FileRouteTypes {
     | '/editor'
     | '/settings'
     | '/submit'
+    | '/admin/_layout'
+    | '/admin/editors'
+    | '/admin/manuscripts'
+    | '/admin/settings'
     | '/manuscript/$id'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
   DashboardRoute: typeof DashboardRoute
   EditorRoute: typeof EditorRoute
@@ -185,6 +238,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SubmitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/_layout': {
+      id: '/admin/_layout'
+      path: ''
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminLayoutRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/editors': {
+      id: '/admin/editors'
+      path: '/editors'
+      fullPath: '/admin/editors'
+      preLoaderRoute: typeof AdminEditorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/manuscripts': {
+      id: '/admin/manuscripts'
+      path: '/manuscripts'
+      fullPath: '/admin/manuscripts'
+      preLoaderRoute: typeof AdminManuscriptsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/manuscript/$id': {
       id: '/manuscript/$id'
       path: '/manuscript/$id'
@@ -195,9 +283,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminLayoutRoute: typeof AdminLayoutRoute
+  AdminEditorsRoute: typeof AdminEditorsRoute
+  AdminManuscriptsRoute: typeof AdminManuscriptsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLayoutRoute: AdminLayoutRoute,
+  AdminEditorsRoute: AdminEditorsRoute,
+  AdminManuscriptsRoute: AdminManuscriptsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
   DashboardRoute: DashboardRoute,
   EditorRoute: EditorRoute,
