@@ -28,37 +28,36 @@ export const Route = createFileRoute("/")({
   component: LoginPage,
 });
 
-const NAMES: Record<Role, string> = {
-  author: "Amara Nwosu",
-  editor: "Nina Okoro",
-  admin: "Sasha Bell",
-};
-
 function LoginPage() {
   const { login, role: activeRole } = useApp();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("amara@lorempress.co");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("author");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (activeRole) void navigate({ to: ROLE_HOME[activeRole], replace: true });
   }, [activeRole, navigate]);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const next: { email?: string; password?: string } = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = "Enter a valid email address.";
+    if (!email.trim()) next.email = "Email or username is required.";
     if (!password.trim()) next.password = "Password is required.";
     setErrors(next);
     if (Object.keys(next).length) return;
     setSubmitting(true);
-    setTimeout(() => {
-      login({ name: NAMES[role], email, role });
+    try {
+      await login(email, password, role);
       void navigate({ to: ROLE_HOME[role], replace: true });
-    }, 500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login failed. Please check your credentials.";
+      setErrors({ general: message });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -80,14 +79,20 @@ function LoginPage() {
           </p>
 
           <form className="mt-6 space-y-4" onSubmit={submit} noValidate>
+            {errors.general && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {errors.general}
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email / Username</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@lorempress.co"
+                placeholder="Administrator or you@example.com"
                 aria-invalid={!!errors.email}
               />
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
@@ -127,7 +132,7 @@ function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Mock mode — any password works. Data persists for this session only.
+            Sign in with your ERPNext credentials. Data is stored on your Frappe server.
           </p>
         </div>
       </div>

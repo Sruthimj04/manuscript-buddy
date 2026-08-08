@@ -1,0 +1,1 @@
+# Manuscript Management module
