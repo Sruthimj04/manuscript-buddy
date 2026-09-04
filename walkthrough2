@@ -1,0 +1,370 @@
+# Manuscript Buddy — Project Q&A (Viva Reference)
+
+> Use this to answer any question about your project. Every answer is written in first person as if you're explaining it.
+
+---
+
+## GENERAL / OVERVIEW
+
+### Q: What is your project about?
+
+**A:** My project is called **Manuscript Buddy** (branded as "LOREM"). It's a **full-stack manuscript submission and editorial management system** for a publishing house. Authors can submit manuscripts through a step-by-step wizard, an AI engine scans the manuscript and generates a quality report, editors review and make decisions (approve, request revisions, or reject), and admins oversee the entire publishing pipeline. It tracks every manuscript from first submission to final publication.
+
+### Q: What problem does it solve?
+
+**A:** In a traditional publishing workflow, manuscripts are managed through emails, spreadsheets, and scattered documents. My system digitizes the entire pipeline — authors get a clean submission portal, editors get a structured review queue with AI-assisted insights, and admins get a global dashboard to track every manuscript across the pipeline. It brings transparency, traceability (audit timeline), and consistency to the publishing process.
+
+### Q: What is the technology stack?
+
+**A:** 
+- **Frontend:** React 19 with TypeScript, TanStack Start (for SSR and file-based routing), TanStack Router
+- **Styling:** Tailwind CSS v4 with Radix UI for accessible, pre-built components (dialogs, dropdowns, tabs, etc.)
+- **State Management:** React Context API (custom [AppProvider](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/store/app-store.tsx#29-122))
+- **Form Validation:** React Hook Form with Zod schema validation
+- **Icons:** Lucide React
+- **Notifications:** Sonner (toast library)
+- **Backend:** Frappe/ERPNext framework (Python) running inside Docker
+- **Database:** MariaDB (InnoDB engine) — this is the default database used by Frappe
+- **Dev Server:** Vite 8 with a proxy to forward API calls to the ERPNext backend
+- **SSR Runtime:** Nitro (Cloudflare-compatible server runtime)
+
+### Q: Why did you choose this stack?
+
+**A:** I chose **TanStack Start** because it provides server-side rendering out of the box with file-based routing, which makes the app SEO-friendly and fast on first load. **Frappe/ERPNext** gives me a ready-made ORM, role-based permissions, REST API framework, and cookie-based authentication — I didn't need to build any of that from scratch. **Radix UI** ensures all my components (dropdowns, dialogs, etc.) are accessible and keyboard-navigable by default. **Tailwind CSS** speeds up UI development, and **Zod + React Hook Form** gives me type-safe form validation.
+
+---
+
+## AUTHENTICATION & SECURITY
+
+### Q: How does the login work?
+
+**A:** The login page collects email/username, password, and a role selector (Author/Editor/Admin). When the user clicks Sign In:
+1. The frontend sends a `POST /api/method/login` request to the Frappe backend with the credentials.
+2. Frappe validates the credentials against its User doctype in MariaDB.
+3. On success, Frappe returns a **session cookie** (`sid`) and a **CSRF token** cookie (`csrf_token`).
+4. My frontend captures the CSRF token from `document.cookie` and stores it in memory.
+5. Then it calls [getUserInfo()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#167-200) — which first calls `frappe.auth.get_logged_user` to get the email, then fetches the full User document to get the `full_name` and `roles` array.
+6. The roles are mapped: if the user has "Manuscript Admin" or "System Manager" → admin; "Manuscript Editor" → editor; otherwise → author.
+7. The user is redirected to their role-specific home page.
+
+### Q: What authentication method did you use and why?
+
+**A:** I use **cookie-based session authentication** provided by Frappe. Every API call includes `credentials: "include"` so the browser automatically sends the session cookie. This is more secure than storing tokens in localStorage because cookies can be marked HttpOnly (not accessible via JavaScript) and are automatically managed by the browser. I also include a **CSRF token** in every request header (`X-Frappe-CSRF-Token`) to prevent Cross-Site Request Forgery attacks.
+
+### Q: How does session persistence work?
+
+**A:** When the app loads, the [AppProvider](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/store/app-store.tsx#29-122) runs a [checkSession()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/store/app-store.tsx#49-65) function in a `useEffect` on mount. It calls [getUserInfo()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#167-200) which tries to hit the Frappe backend using the existing cookie. If the cookie is still valid, Frappe returns the user info, and I re-hydrate the user state — so the user stays logged in even after refreshing the page. If the cookie has expired, the call fails silently and the user sees the login page.
+
+### Q: How does logout work?
+
+**A:** Logout sends a `POST /api/method/logout` to the Frappe backend, which destroys the server-side session. On the client side, I clear the CSRF token from memory, set the user state to `null`, clear the manuscript list, and navigate back to the login page. The user can log out from either the Settings page ("Sign out" button) or the dropdown menu in the header.
+
+### Q: How do you handle CSRF protection?
+
+**A:** After login, Frappe sets a `csrf_token` cookie. My [erpnextClient.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts) reads this cookie using `document.cookie.match(/csrf_token=([^;]+)/)` and attaches it as the `X-Frappe-CSRF-Token` header on every API request. This ensures that only requests originating from my frontend (which has access to the cookie) can modify data.
+
+---
+
+## ROLE-BASED ACCESS CONTROL (RBAC)
+
+### Q: What roles exist in your system?
+
+**A:** There are **three roles**:
+1. **Author** — can submit manuscripts, view their dashboard, track pipeline status, upload revisions, and view AI analytics.
+2. **Editor** — can review pending manuscripts, approve/reject/request revisions, and view AI analytics.
+3. **Admin** — has full control: can assign editors, force workflow state changes, publish manuscripts, and view everything.
+
+### Q: How do you enforce role-based access on the frontend?
+
+**A:** Every protected page is wrapped in an `<AppShell allow={["author"]}>` (or `["editor"]`, `["admin"]`) component. Inside [AppShell](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/components/pub/AppShell.tsx#42-134), I check:
+- If no user is logged in (`role === null`), redirect to the login page.
+- If the user's role is not in the [allow](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/server.ts#38-46) list, redirect them to their own home page.
+- The navigation menu also changes dynamically per role — authors see Dashboard/Submit/Analytics/Settings, editors see Review Queue/Analytics/Settings, admins see Admin Panel/Analytics/Settings.
+
+### Q: How do you enforce role-based access on the backend?
+
+**A:** The Frappe DocType `Manuscript Submission` has a permissions array in its JSON schema. System Manager and Manuscript Admin have full CRUD access. Manuscript Author can read, write, and create but not delete. Manuscript Editor can only read and write but not create or delete. These are enforced at the ORM level by Frappe before any database operation.
+
+---
+
+## FRONTEND ARCHITECTURE
+
+### Q: How does routing work?
+
+**A:** I use **TanStack Router** with file-based routing. Each file in `src/routes/` automatically becomes a route:
+- [index.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/index.tsx) → `/` (login page)
+- [dashboard.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/dashboard.tsx) → `/dashboard` (author home)
+- [submit.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/submit.tsx) → `/submit` (submission wizard)
+- [editor.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/editor.tsx) → `/editor` (editor review queue)
+- [admin.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/admin.tsx) → `/admin` (admin panel)
+- [manuscript.$id.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/manuscript.$id.tsx) → `/manuscript/:id` (dynamic route for manuscript detail)
+- [analytics.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/analytics.tsx) → `/analytics`
+- [settings.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/settings.tsx) → `/settings`
+- [__root.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/__root.tsx) → the root layout wrapping all routes (provides HTML shell, QueryClient, AppProvider, Toaster)
+
+### Q: How do you manage global state?
+
+**A:** I use **React Context API** with a custom [AppProvider](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/store/app-store.tsx#29-122). It holds:
+- `user` — the logged-in user object (name, email, role)
+- [manuscripts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#108-147) — the full list of manuscripts loaded from the backend
+- `loading` / `error` — UI states
+- [login()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#114-145), [logout()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#146-153), `refresh()` — action functions
+
+Every page accesses this via the [useApp()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/store/app-store.tsx#123-128) hook. When the user logs in, a `useEffect` detects the user change and automatically calls `refresh()` which fetches all manuscripts from the backend. After any mutation (submit, decision, state change), I call `refresh()` to re-fetch the latest data.
+
+### Q: Why React Context instead of Redux or Zustand?
+
+**A:** The app has a simple, flat state shape — just a user object and a manuscripts list. React Context is lightweight, has no extra dependencies, and is sufficient for this use case. Redux would be overkill since I don't have complex state update patterns or deeply nested state. If the app scaled significantly, I could migrate to Zustand or TanStack Query for server state management.
+
+### Q: How does the submission wizard work?
+
+**A:** The submission is a **5-step wizard** built in [submit.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/submit.tsx):
+1. **Title & Category** — Title (max 120 chars), primary genre (8 options), secondary genre, target audience, keywords (tag input with Enter/comma to add).
+2. **Description** — Executive abstract (min 5 words), detailed synopsis, estimated page count, target launch date.
+3. **Upload PDF** — Drag & drop or click to upload. Only `.pdf` files accepted, max 50MB. A simulated progress bar shows the upload.
+4. **Preview & AI Scan** — Left panel shows the PDF in an iframe. Right panel shows the AI Pre-flight Report with scores for readability, marketability, genre confidence, pacing, and an overall score.
+5. **Confirm** — Summary of all fields. Author must check an "I confirm this is my original work" checkbox before submitting.
+
+Each step has its own validation. The "Continue" button doesn't proceed unless validation passes. Final submission opens a confirmation dialog, then calls [createManuscript()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#126-153) on the backend.
+
+### Q: How does the AI analysis work?
+
+**A:** Currently, the AI report is generated **client-side** using the [generateAIReport()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#95-125) function. It produces randomized scores for:
+- **Overall AI score** (62–93%)
+- **Genre confidence** — percentage split between primary and secondary genres
+- **Readability** (55–94)
+- **Marketability** (50–94)
+- **Pacing** — per-act scores for Act I, II, III
+
+There's also a **server-side version** ([generate_ai_report](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#294-327) in [api.py](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py)) that does the same thing. In production, this would be replaced with a real NLP/ML pipeline that analyses the manuscript text.
+
+### Q: How does the editor review process work?
+
+**A:** The editor sees a review queue at `/editor` showing all manuscripts with state "Pending Editor Review" or "AI Processing". They can sort by submission date, author, or AI score, and paginate (5 per page). For each manuscript, they can click "Make Decision" which opens a dialog with three options:
+- **Approve** — no extra input needed, sets state to "Approved"
+- **Request Revisions** — requires a feedback textarea explaining what changes are needed, sets state to "Revisions Requested"
+- **Reject** — requires selecting a rejection reason from a predefined list AND writing an explanation, sets state to "Rejected"
+
+The form uses **Zod schema validation** with `superRefine` for conditional validation — feedback is required only for revisions and rejection, and rejection reason is required only for rejection.
+
+### Q: What can the admin do?
+
+**A:** The admin page at `/admin` has:
+- **Overview section** — Pipeline stage breakdown with counts, quick-action cards, deadline tracking
+- **Manuscripts table** — All manuscripts with search, filter by pipeline stage, sort
+- **Actions per manuscript**: Assign/change editor (dropdown), Force-advance to any state, Publish (one-click for approved manuscripts)
+- **Manuscript drawer** — Click any row to open a slide-over panel with full details
+
+---
+
+## BACKEND & DATABASE
+
+### Q: What is Frappe/ERPNext and why did you use it?
+
+**A:** Frappe is a **Python web framework** that provides an ORM, REST API, role-based permissions, authentication, and a metadata-driven architecture using "DocTypes" (like models/schemas). ERPNext is a full ERP system built on Frappe. I used the Frappe framework specifically because it gives me out-of-the-box user management, session handling, and a structured way to define database schemas (DocTypes) with permissions — saving me from building all that infrastructure manually.
+
+### Q: What database does this use?
+
+**A:** **MariaDB** with the **InnoDB** storage engine. This is the default database that Frappe uses. It runs inside a Docker container along with the Frappe application server. MariaDB is chosen because it's MySQL-compatible, open-source, and Frappe's ORM is optimized for it.
+
+### Q: Explain your database schema.
+
+**A:** The main DocType is **Manuscript Submission** with an autoname format `MS-{#####}` (e.g., MS-00001, MS-00002). It has **37 fields** organized into sections:
+
+- **Basic info**: title (Data, required), author (Data, required), state (Select with 7 options), submitted_at (Datetime), assigned_editor (Data)
+- **Genre & Audience**: genre (Select — Fiction, Non-Fiction, Sci-Fi, Drama, Biography, Business, Poetry, Academic), secondary_genre, audience (General/YA/Academic/Professional/Children), keywords (Small Text, comma-separated)
+- **Content**: abstract (Text), synopsis (Text), page_count (Int), launch_date (Date)
+- **File**: manuscript_file (Attach for PDF), file_name (read-only Data), file_size (read-only Int)
+- **Rejection**: rejection_reason (Small Text, visible only when state = Rejected)
+- **AI Report**: ai_score, ai_readability, ai_marketability, ai_detected_pages (all Int), ai_title_matched (Check/Boolean), ai_summary (Text), ai_genre_confidence (JSON string), ai_pacing (JSON string)
+- **Timeline Events**: child table with actor, action, timestamp
+- **Editor Notes**: child table with note_author, created_at, body
+
+### Q: What are child tables?
+
+**A:** In Frappe, a child table is a **one-to-many relationship** stored as a linked DocType. My `Manuscript Submission` has two child tables:
+1. **Manuscript Timeline Event** — stores the audit trail (who did what, when). Each event has an `actor`, `action`, and `timestamp`.
+2. **Manuscript Editor Note** — stores editor feedback. Each note has a `note_author`, `created_at`, and `body`.
+
+When you load a manuscript, Frappe automatically loads all its child table rows.
+
+### Q: What backend API endpoints did you build?
+
+**A:** I built **7 whitelisted API endpoints** in [api.py](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py), all accessible via `POST /api/method/manuscript_management.api.<function>`:
+
+| Endpoint | What it does |
+|----------|-------------|
+| [list_manuscripts(page, limit, sort_by, sort_dir)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#108-147) | Returns paginated, sorted list of all manuscripts |
+| [get_manuscript(manuscript_id)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#149-157) | Returns a single manuscript by ID |
+| [create_manuscript(data)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#159-204) | Creates a new manuscript, sets AI data, adds timeline events |
+| [update_state(manuscript_id, state, actor, action)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#206-216) | Changes the workflow state, logs to timeline |
+| [assign_editor(manuscript_id, editor, actor)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#218-228) | Assigns/changes the editor |
+| [add_editor_decision(manuscript_id, decision, actor, feedback, rejection_reason)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#230-279) | Records approve/revise/reject with validation |
+| [upload_revision(manuscript_id, file_name, actor)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#281-292) | Records revision upload, resets state to Pending Editor Review |
+
+### Q: How does the API serialize data?
+
+**A:** I have a [_serialize_manuscript(doc)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#44-103) function that converts a Frappe Document object into the JSON shape the React frontend expects. It maps Frappe field names (snake_case like `submitted_at`) to frontend field names (camelCase like `submittedAt`). JSON fields like `ai_genre_confidence` are parsed from strings to arrays. Keywords are split from a comma-separated string into an array. Child table rows (timeline events, editor notes) are iterated and mapped to simpler objects.
+
+### Q: What server-side validation do you have?
+
+**A:** Two levels:
+1. **In the DocType controller** ([manuscript_submission.py](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/manuscript_management/doctype/manuscript_submission/manuscript_submission.py)): The [validate()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/manuscript_management/doctype/manuscript_submission/manuscript_submission.py#15-19) method throws an error if state is "Rejected" but no rejection_reason is provided. The [before_save()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/manuscript_management/doctype/manuscript_submission/manuscript_submission.py#10-14) method auto-sets `submitted_at` on first save.
+2. **In the API layer** ([api.py](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py)): The [add_editor_decision()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#230-279) function validates that rejection_reason is provided when decision is "reject", and that the decision value is one of "approve", "revise", or "reject".
+
+---
+
+## WORKFLOW & BUSINESS LOGIC
+
+### Q: Explain the manuscript workflow states.
+
+**A:** A manuscript goes through these **7 states**:
+1. **Draft** — Initial creation (not used in current flow since submissions skip to AI Processing)
+2. **AI Processing** — The AI engine is scanning the manuscript
+3. **Pending Editor Review** — AI scan complete, waiting for an editor to review
+4. **Revisions Requested** — Editor asked for changes, author needs to revise
+5. **Approved** — Editor approved, awaiting admin to publish
+6. **Published** — Final state, manuscript is published
+7. **Rejected** — Editor rejected with a documented reason (terminal state)
+
+### Q: Who triggers each state transition?
+
+**A:**
+- **Author** creates a submission → state starts at "AI Processing"
+- **System** (AI engine completes) → moves to "Pending Editor Review"
+- **Editor** approves → "Approved"; requests revisions → "Revisions Requested"; rejects → "Rejected"
+- **Author** uploads revised draft → back to "Pending Editor Review"
+- **Admin** publishes → "Published"
+- **Admin** can also force any state transition
+
+### Q: How is the timeline/audit trail maintained?
+
+**A:** Every state change, editor decision, editor assignment, and revision upload calls the [_add_timeline_event(doc, actor, action)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#22-30) helper function. This appends a new row to the `timeline_events` child table with the actor's name, what action they took, and the current timestamp. This creates a complete, immutable audit trail visible on the manuscript detail page.
+
+---
+
+## FRONTEND-BACKEND COMMUNICATION
+
+### Q: How does the frontend communicate with the backend?
+
+**A:** The frontend has a two-layer API architecture:
+1. **[erpnextClient.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts)** — Low-level client that wraps [fetch()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/server.ts#48-61). It handles URL construction, CSRF tokens, cookie credentials, JSON parsing, and error handling. It exposes [login()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#114-145), [logout()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#146-153), [getLoggedUser()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#154-166), [getUserInfo()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#167-200), and a generic [call()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#98-113) function.
+2. **[manuscriptService.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts)** — Business-level service that calls `erpnextClient.call()` with the specific endpoint names and parameters. It exposes [listManuscripts()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#57-71), [createManuscript()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#126-153), [updateState()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#154-167), [assignEditor()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#168-179), [addEditorDecision()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#180-195), [uploadRevision()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/manuscriptService.ts#196-207), etc.
+
+### Q: How do you handle CORS?
+
+**A:** In development, I use **Vite's built-in proxy**. The [vite.config.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/vite.config.ts) proxies all `/api/*` requests to `http://localhost:8080` (where ERPNext Docker is running). This means the browser thinks it's calling the same origin, so there are no CORS issues. In production, you either set `VITE_ERPNEXT_URL` to the ERPNext domain or use a reverse proxy (like Nginx).
+
+### Q: How do you handle API errors?
+
+**A:** I have a custom [FrappeError](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#24-37) class that extends JavaScript's [Error](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#24-37). When the backend returns a non-200 response, I parse the response body — Frappe can return errors in `_server_messages` (a JSON array of message objects) or in `exception`. I extract the human-readable message, the HTTP status code, and the exception type. On the frontend, each page catches these errors and shows them using toast notifications (Sonner) or inline error messages.
+
+---
+
+## TYPE SAFETY & VALIDATION
+
+### Q: How do you ensure type safety?
+
+**A:** The entire frontend is in **TypeScript**. I have a dedicated [types.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts) file that defines:
+- [Role](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#1-2) type: `"author" | "editor" | "admin"`
+- [WorkflowState](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#12-13) type: a union of all 7 states
+- [Manuscript](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#90-98) type: a **discriminated union** on the [state](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py#206-216) field — this means TypeScript enforces that `rejectionReason` is only present when `state === "Rejected"`
+- Interfaces for [AIReport](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#28-38), [TimelineEvent](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#14-20), [EditorNote](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#21-27), [ListManuscriptsOptions](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#103-109), `Paginated<T>`, [User](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#121-126)
+
+### Q: What is the discriminated union pattern you used?
+
+**A:** Instead of having one big [Manuscript](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#90-98) interface with optional `rejectionReason`, I created separate interfaces for each state (e.g., [DraftManuscript](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#66-69), [RejectedManuscript](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#84-89)). Only [RejectedManuscript](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#84-89) requires `rejectionReason: string`. The [Manuscript](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#90-98) type is the union of all these. This means if I narrow the type with `if (m.state === "Rejected")`, TypeScript knows `m.rejectionReason` exists and is a string. There's also a helper [isRejected(m)](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/types.ts#99-102) type guard function.
+
+### Q: How do you validate forms?
+
+**A:** Two approaches:
+1. **Manual validation** (submission wizard in [submit.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/submit.tsx)): Each step has a [validateStep()](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/submit.tsx#134-151) function that checks required fields and word counts, populating an `errors` object that renders inline error messages.
+2. **Zod schema validation** (editor decision dialog in [editor.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/editor.tsx)): I define a Zod schema with `superRefine` for conditional rules (feedback required if revising, both reason and feedback required if rejecting). React Hook Form integrates with Zod via the `@hookform/resolvers/zod` adapter.
+
+---
+
+## DEPLOYMENT & CONFIGURATION
+
+### Q: What environment variables does the project use?
+
+**A:** Just one: `VITE_ERPNEXT_URL` — the URL of the ERPNext backend. In development it's empty (the Vite proxy handles it). In production, you set it to the ERPNext server URL like `https://erp.example.com`.
+
+### Q: How is the backend deployed?
+
+**A:** The Frappe/ERPNext backend runs in **Docker containers**. The Docker setup includes the Frappe application server, MariaDB database, and Redis (for caching/background jobs). The custom Frappe app `manuscript_management` is installed as a Python package inside the container.
+
+### Q: How is the frontend deployed?
+
+**A:** The frontend can be deployed to **Vercel** or **Netlify** since TanStack Start with Nitro supports serverless deployment. The build command is `vite build` which produces both the client bundle and the Nitro server entry. The `VITE_ERPNEXT_URL` environment variable must be set to point to the production ERPNext instance.
+
+---
+
+## COMPONENT DESIGN
+
+### Q: What key UI components did you build?
+
+**A:**
+- **AppShell** — Layout wrapper with sticky header, dynamic navigation per role, user avatar dropdown with name/role/logout
+- **PipelineTracker** — Visual 6-step progress indicator showing manuscript state (completed steps get checkmarks, active step gets a ring highlight)
+- **StatusBadge** — Colored pill badges for each workflow state (muted for Draft, highlighted for Approved/Published, red for Rejected)
+- **AdminOverview** — Large dashboard component with pipeline stage counts, deadline warnings, and quick-action cards
+- **ManuscriptTable** — Searchable, filterable, sortable table for admin with inline action buttons
+- **ManuscriptDrawer** — Slide-over panel showing full manuscript details
+
+### Q: What UI library do you use for components?
+
+**A:** I use **Radix UI** primitives — these are unstyled, accessible components (Dialog, Select, DropdownMenu, Tabs, RadioGroup, Checkbox, Switch, etc.). I style them with Tailwind CSS. The components are in `src/components/ui/`. This approach gives me full visual control while ensuring accessibility (keyboard navigation, screen reader support, ARIA attributes) is handled automatically.
+
+---
+
+## SSR & ERROR HANDLING
+
+### Q: Does your app support server-side rendering?
+
+**A:** Yes. TanStack Start provides SSR out of the box via the **Nitro** runtime. The [server.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/server.ts) file is the server entry point — it imports the TanStack Start server module, forwards all requests through it, and handles edge cases like h3 framework swallowing errors into generic JSON responses. If SSR fails, it returns a static HTML error page instead of crashing.
+
+### Q: How do you handle errors in the app?
+
+**A:** Multiple levels:
+1. **Root error boundary** in [__root.tsx](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/routes/__root.tsx) — catches any unhandled React error and shows a "This page didn't load" screen with "Try again" and "Go home" buttons
+2. **404 handler** — custom Not Found component at the root route level
+3. **API errors** — [FrappeError](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/erpnextClient.ts#24-37) class parses Frappe error responses; each page handles these with toast notifications or inline error messages
+4. **SSR errors** — [server.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/server.ts) catches h3 swallowed errors (HTTP 500 with `{unhandled: true}`) and renders a fallback HTML page
+5. **Loading states** — every page shows a spinner while data is loading
+
+---
+
+## MISCELLANEOUS
+
+### Q: How does the keyword/tag input work?
+
+**A:** In the submission wizard Step 1, keywords use a custom tag input. The user types in a text field and presses Enter or comma to add a keyword. Each keyword appears as a dark pill with an X button to remove it. Duplicates are prevented. The keywords are stored as a `string[]` on the frontend and converted to a comma-separated string on the backend.
+
+### Q: What are the publishing metadata fields?
+
+**A:** The [publishingMeta.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/publishingMeta.ts) file computes presentation-only fields from each manuscript for the admin view:
+- **ISBN** — deterministically generated from the manuscript ID
+- **Priority** — High (AI score ≥ 85 or Approved), Medium (≥ 70), Low (below 70)
+- **Pipeline stage** — maps workflow states to 7 editorial stages: Submitted → Assigned → Editing → Review → Proofreading → Design → Published
+- **Cover design status**, **Proofreading %**, **Due date**, **Version number**
+
+These are computed on the fly, not stored in the database.
+
+### Q: What mock data does the project have?
+
+**A:** [mockData.ts](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/src/services/mockData.ts) defines:
+- 4 editor names (Nina Okoro, Daniel Reyes, Priya Shah, Unassigned)
+- 8 genres (Fiction, Non-Fiction, Science Fiction, Drama, Biography, Business, Poetry, Academic)
+- 5 audiences (General, Young Adult, Academic, Professional, Children)
+- 5 rejection reasons (Out of scope, Insufficient originality, Quality below threshold, Incomplete submission, Rights conflict)
+- 2 sample manuscripts with full data (The Quantum Paradigm, Echoes of Tomorrow)
+
+### Q: What is the Frappe app structure?
+
+**A:** The Frappe app `manuscript_management` follows the standard structure:
+- [modules.txt](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/modules.txt) — lists the module name ("Manuscript Management")
+- [api.py](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/api.py) — all whitelisted API endpoints
+- `manuscript_management/doctype/manuscript_submission/` — contains:
+  - [manuscript_submission.json](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/manuscript_management/doctype/manuscript_submission/manuscript_submission.json) — the DocType schema (fields, permissions, autoname)
+  - [manuscript_submission.py](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/manuscript_management/doctype/manuscript_submission/manuscript_submission.py) — the server-side controller with [before_save](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/manuscript_management/doctype/manuscript_submission/manuscript_submission.py#10-14) and [validate](file:///c:/Users/rahul/OneDrive/Booksubmission_grp2/manuscript-buddy/erpnext_backend/manuscript_management/manuscript_management/doctype/manuscript_submission/manuscript_submission.py#15-19) hooks
+  - `__init__.py` — empty init file for Python package
