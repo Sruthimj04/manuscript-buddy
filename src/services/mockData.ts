@@ -68,6 +68,8 @@ export const initialManuscripts: Manuscript[] = [
       { id: "t4", actor: "System", action: "Assigned to editor Nina Okoro", timestamp: "2026-07-21T10:20:00Z" },
     ],
     notes: [],
+    chapters: [],
+    legalDeclaration: false,
   },
   {
     id: "MS-1043",
@@ -120,5 +122,7 @@ export const initialManuscripts: Manuscript[] = [
         body: "The middle third loses momentum — chapters 9 through 14 repeat the same emotional beat. Please consolidate into four chapters and give the archivist a concrete external deadline. Also tighten the opening vignette; the hook currently arrives on page 12.",
       },
     ],
+    chapters: [],
+    legalDeclaration: false,
   },
 ];

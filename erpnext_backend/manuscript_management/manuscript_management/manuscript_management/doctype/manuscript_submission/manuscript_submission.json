@@ -7,6 +7,7 @@
   "is_submittable": 0,
   "issingle": 0,
   "istable": 0,
+  "custom": 1,
   "autoname": "format:MS-{#####}",
   "title_field": "title",
   "search_fields": "title, author, state",
@@ -228,6 +229,49 @@
       "label": "Editor Notes",
       "fieldtype": "Table",
       "options": "Manuscript Editor Note"
+    },
+    {
+      "fieldname": "section_chapters",
+      "label": "Chapters",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "chapters",
+      "label": "Chapters",
+      "fieldtype": "Table",
+      "options": "Manuscript Chapter"
+    },
+    {
+      "fieldname": "section_legal",
+      "label": "Legal Declaration",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "legal_declaration",
+      "label": "Original Work Declaration",
+      "fieldtype": "Check",
+      "default": 0
+    },
+    {
+      "fieldname": "legal_accepted_at",
+      "label": "Declaration Accepted At",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "legal_accepted_by",
+      "label": "Declaration Accepted By",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "author_email",
+      "label": "Author Email",
+      "fieldtype": "Data",
+      "description": "Author's user account email",
+      "length": 140
     }
   ],
   "permissions": [

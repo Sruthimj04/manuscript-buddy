@@ -9,6 +9,7 @@
 import { call } from "./erpnextClient";
 import type {
   AIReport,
+  ChapterData,
   ListManuscriptsOptions,
   Manuscript,
   ManuscriptSortKey,
@@ -92,6 +93,15 @@ export async function getManuscript(
   }
 }
 
+export async function getActiveSubmission(): Promise<Manuscript | null> {
+  try {
+    const result = await call<Manuscript | null>(`${API}.get_active_submission`);
+    return result ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function generateAIReport(input: {
   title: string;
   genre: string;
@@ -147,9 +157,90 @@ export async function createManuscript(
       fileSize: payload.fileSize,
       state: payload.state,
       ai: payload.ai,
+      chapters: payload.chapters,
     },
   });
 }
+
+// ── Draft management ─────────────────────────────────────────────────────── //
+
+export async function saveDraft(
+  manuscriptId: string,
+  data: Record<string, unknown>,
+): Promise<Manuscript> {
+  return call<Manuscript>(`${API}.save_draft`, {
+    manuscript_id: manuscriptId,
+    data,
+  });
+}
+
+// ── Chapter CRUD ─────────────────────────────────────────────────────────── //
+
+export async function createChapter(
+  manuscriptId: string,
+  chapterData: ChapterData,
+): Promise<Manuscript> {
+  return call<Manuscript>(`${API}.create_chapter`, {
+    manuscript_id: manuscriptId,
+    chapter_data: chapterData,
+  });
+}
+
+export async function updateChapter(
+  manuscriptId: string,
+  chapterName: string,
+  chapterData: ChapterData,
+): Promise<Manuscript> {
+  return call<Manuscript>(`${API}.update_chapter`, {
+    manuscript_id: manuscriptId,
+    chapter_name: chapterName,
+    chapter_data: chapterData,
+  });
+}
+
+export async function deleteChapter(
+  manuscriptId: string,
+  chapterName: string,
+): Promise<Manuscript> {
+  return call<Manuscript>(`${API}.delete_chapter`, {
+    manuscript_id: manuscriptId,
+    chapter_name: chapterName,
+  });
+}
+
+export async function uploadChapterImage(
+  manuscriptId: string,
+  chapterName: string,
+  imageUrl: string,
+  caption?: string,
+): Promise<Manuscript> {
+  return call<Manuscript>(`${API}.upload_chapter_image`, {
+    manuscript_id: manuscriptId,
+    chapter_name: chapterName,
+    image_url: imageUrl,
+    caption: caption ?? "",
+  });
+}
+
+// ── Final submission ─────────────────────────────────────────────────────── //
+
+export async function finalSubmit(
+  manuscriptId: string,
+): Promise<Manuscript> {
+  return call<Manuscript>(`${API}.final_submit`, {
+    manuscript_id: manuscriptId,
+  });
+}
+
+export async function acceptLegalDeclaration(
+  manuscriptId: string,
+): Promise<Manuscript> {
+  return call<Manuscript>(`${API}.accept_legal_declaration`, {
+    manuscript_id: manuscriptId,
+  });
+}
+
+// ── Existing workflow operations (preserved) ─────────────────────────────── //
 
 export async function updateState(
   id: string,

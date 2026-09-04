@@ -1,15 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState, useEffect } from "react";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  FileUp,
-  Loader2,
-  Sparkles,
-  X,
-  FileText,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/pub/AppShell";
 import { Button } from "@/components/ui/button";
@@ -17,119 +8,125 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { AUDIENCES, GENRES } from "@/services/mockData";
 import * as service from "@/services/manuscriptService";
-import type { AIReport } from "@/services/types";
+import type { Manuscript, Chapter } from "@/services/types";
 import { useApp } from "@/store/app-store";
+import { ChapterList } from "@/components/pub/ChapterList";
+import { ChapterEditor } from "@/components/pub/ChapterEditor";
 
 export const Route = createFileRoute("/submit")({
   head: () => ({
     meta: [
       { title: "New Submission — LOREM" },
-      { name: "description", content: "Five-step manuscript submission wizard with PDF upload and AI pre-flight scan." },
+      { name: "description", content: "Five-step manuscript submission wizard with chapter upload and AI pre-flight scan." },
       { property: "og:title", content: "New Submission — LOREM" },
-      { property: "og:description", content: "Submit a manuscript with metadata, PDF upload, and AI pre-flight analysis." },
+      { property: "og:description", content: "Submit a manuscript with metadata, chapters, and AI pre-flight analysis." },
     ],
   }),
   component: SubmitPage,
 });
 
-const STEPS = ["Title & Category", "Description", "Upload PDF", "Preview & AI Scan", "Confirm"];
-const MAX_SIZE = 50 * 1024 * 1024;
+const STEPS = ["Title & Category", "Description", "Chapters", "Preview & AI Scan", "Confirm"];
 
 function SubmitPage() {
   const { user, refresh } = useApp();
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
 
+  // Wizard state
+  const [step, setStep] = useState(0);
+  const [activeManuscript, setActiveManuscript] = useState<Manuscript | null>(null);
+  const [initializing, setInitializing] = useState(true);
+
+  // Form state
   const [title, setTitle] = useState("");
   const [genre, setGenre] = useState("");
   const [secondaryGenre, setSecondaryGenre] = useState("");
   const [audience, setAudience] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordDraft, setKeywordDraft] = useState("");
-
   const [abstract, setAbstract] = useState("");
   const [synopsis, setSynopsis] = useState("");
   const [pageCount, setPageCount] = useState("");
   const [launchDate, setLaunchDate] = useState("");
 
-  const [file, setFile] = useState<File | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [uploadPct, setUploadPct] = useState(0);
-  const [uploading, setUploading] = useState(false);
-  const [fileError, setFileError] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Chapter state
+  const [editingChapter, setEditingChapter] = useState<{ chapter?: Chapter; number: number } | null>(null);
 
+  // AI & Final check state
   const [scanning, setScanning] = useState(false);
-  const [report, setReport] = useState<AIReport | null>(null);
-  const [pdfPage, setPdfPage] = useState(1);
-
   const [confirmed, setConfirmed] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // 1. Initialize submission state
   useEffect(() => {
-    if (!file) {
-      setPdfUrl(null);
-      return;
+    async function loadActive() {
+      setInitializing(true);
+      try {
+        const ms = await service.getActiveSubmission();
+        if (ms) {
+          setActiveManuscript(ms);
+          setTitle(ms.title || "");
+          setGenre(ms.genre || "");
+          setSecondaryGenre(ms.secondaryGenre || "");
+          setAudience(ms.audience || "");
+          setKeywords(ms.keywords || []);
+          setAbstract(ms.abstract || "");
+          setSynopsis(ms.synopsis || "");
+          setPageCount(ms.pageCount ? String(ms.pageCount) : "");
+          setLaunchDate(ms.launchDate || "");
+          if (ms.legalDeclaration) {
+            setLegalAccepted(true);
+            setConfirmed(true);
+          }
+        }
+      } catch (err) {
+        toast.error("Failed to load active submission.");
+      } finally {
+        setInitializing(false);
+      }
     }
-    const url = URL.createObjectURL(file);
-    setPdfUrl(url);
-    return () => {
-      URL.revokeObjectURL(url);
+    void loadActive();
+  }, []);
+
+  // Update backend draft state whenever we move steps
+  async function syncDraft() {
+    if (!title.trim()) return; // Requires at least a title
+
+    const data = {
+      title,
+      author: user?.name ?? "Unknown Author",
+      genre,
+      secondaryGenre,
+      audience,
+      keywords,
+      abstract,
+      synopsis,
+      pageCount: pageCount ? Number(pageCount) : undefined,
+      launchDate: launchDate || undefined,
+      ai: null,
+      chapters: [],
+      legalDeclaration: false,
     };
-  }, [file]);
+
+    if (activeManuscript) {
+      if (activeManuscript.state === "Draft") {
+        await service.saveDraft(activeManuscript.id, data);
+      }
+    } else {
+      // Create new draft
+      const newMs = await service.createManuscript({ ...data, state: "Draft" });
+      setActiveManuscript(newMs);
+    }
+  }
 
   const words = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0);
-
-  function handleFiles(list: FileList | null) {
-    const f = list?.[0];
-    if (!f) return;
-    if (!f.name.toLowerCase().endsWith(".pdf") || (f.type && f.type !== "application/pdf")) {
-      setFileError("Invalid file format. Only .pdf files are accepted.");
-      setFile(null);
-      return;
-    }
-    if (f.size > MAX_SIZE) {
-      setFileError("File too large. The maximum size is 50MB.");
-      setFile(null);
-      return;
-    }
-    setFileError(null);
-    setFile(f);
-    setUploading(true);
-    setUploadPct(0);
-    const timer = setInterval(() => {
-      setUploadPct((p) => {
-        if (p >= 100) {
-          clearInterval(timer);
-          setUploading(false);
-          return 100;
-        }
-        return Math.min(100, p + 7 + Math.random() * 12);
-      });
-    }, 140);
-  }
 
   function validateStep(): boolean {
     const e: Record<string, string> = {};
@@ -143,60 +140,197 @@ function SubmitPage() {
       if (!synopsis.trim()) e["synopsis"] = "A detailed synopsis is required.";
     }
     if (step === 2) {
-      if (!file || uploadPct < 100) e["file"] = "Upload a completed PDF to continue.";
+      if (!activeManuscript?.chapters?.length) {
+        e["chapters"] = "Please add at least one chapter to continue.";
+      }
+    }
+    if (step === 3) {
+      // preview/scan step has no manual validation
+    }
+    if (step === 4) {
+      if (!confirmed) e["confirm"] = "Please confirm the legal declaration.";
+      if (!legalAccepted) e["legal"] = "Please accept the legal terms.";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
 
-  function next() {
+  async function next() {
     if (!validateStep()) return;
-    if (step === 2 && !report) {
+    
+    // Save state when moving forward
+    try {
+      await syncDraft();
+    } catch (e) {
+      toast.error("Failed to save draft.");
+      return;
+    }
+
+    if (step === 2 && (!activeManuscript?.ai || activeManuscript.state === "Draft")) {
       setScanning(true);
       setStep(3);
+      // Simulate AI scan delay but don't actually update the backend draft AI field yet, it saves on final submit
       setTimeout(() => {
-        setReport(
-          service.generateAIReport({
+        if (activeManuscript) {
+          activeManuscript.ai = service.generateAIReport({
             title,
             genre,
             secondaryGenre: secondaryGenre || undefined,
             pageCount: pageCount ? Number(pageCount) : undefined,
-          }),
-        );
+          });
+        }
         setScanning(false);
       }, 1400);
       return;
     }
+    
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
   }
 
   async function finalSubmit() {
+    if (!validateStep() || !activeManuscript) return;
     setSubmitting(true);
     try {
-      const created = await service.createManuscript({
-        title,
-        author: user?.name ?? "Amara Nwosu",
-        genre,
-        secondaryGenre: secondaryGenre || undefined,
-        audience,
-        keywords,
-        abstract,
-        synopsis,
-        pageCount: pageCount ? Number(pageCount) : undefined,
-        launchDate: launchDate || undefined,
-        fileName: file?.name,
-        fileSize: file?.size,
-        ai: report,
-      });
+      if (activeManuscript.state === "Draft") {
+        await syncDraft(); // Endure draft is up to date
+      }
+      if (legalAccepted) {
+        await service.acceptLegalDeclaration(activeManuscript.id);
+      }
+      await service.finalSubmit(activeManuscript.id);
       await refresh();
       setDialogOpen(false);
-      toast.success("Manuscript submitted", { description: `${created.title} is now pending editor review.` });
-      void navigate({ to: "/manuscript/$id", params: { id: created.id } });
+      toast.success("Manuscript submitted", { description: `${title} is now pending editor review.` });
+      void navigate({ to: "/manuscript/$id", params: { id: activeManuscript.id } });
     } catch {
       toast.error("Submission failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // --- Chapter Management ---
+
+  async function handleChapterSave(data: { chapterTitle: string; chapterContent: string; chapterNumber: number }) {
+    if (!activeManuscript) {
+      await syncDraft(); // Create draft first if it doesn't exist
+    }
+    // Need to get the updated manuscript ID if we just created it
+    const msId = activeManuscript?.id;
+    if (!msId) {
+      toast.error("Could not save chapter: manuscript ID missing.");
+      return;
+    }
+
+    try {
+      const isEditing = editingChapter?.chapter;
+      if (isEditing) {
+        const updatedMs = await service.updateChapter(msId, isEditing.name, data);
+        setActiveManuscript(updatedMs);
+        toast.success(`Chapter ${data.chapterNumber} updated.`);
+      } else {
+        const updatedMs = await service.createChapter(msId, data);
+        setActiveManuscript(updatedMs);
+        toast.success(`Chapter ${data.chapterNumber} created.`);
+      }
+      setEditingChapter(null);
+    } catch {
+      toast.error("Failed to save chapter.");
+    }
+  }
+
+  async function handleChapterDelete(chapterName: string) {
+    if (!activeManuscript) return;
+    if (confirm("Are you sure you want to delete this chapter?")) {
+      try {
+        const updatedMs = await service.deleteChapter(activeManuscript.id, chapterName);
+        setActiveManuscript(updatedMs);
+        toast.success("Chapter deleted.");
+      } catch {
+        toast.error("Failed to delete chapter.");
+      }
+    }
+  }
+
+  async function handleImageUpload(file: File) {
+    if (!activeManuscript || !editingChapter?.chapter) {
+      toast.error("Create and save the chapter before adding images.");
+      return null;
+    }
+    
+    // In a real app we'd upload to a storage bucket and get a URL here.
+    // For this prototype, we'll use a local object URL or base64.
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const b64 = reader.result as string;
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          if (!activeManuscript || !editingChapter?.chapter) return;
+          const ms = await service.uploadChapterImage(
+            activeManuscript.id,
+            editingChapter.chapter.name,
+            b64
+          );
+          setActiveManuscript(ms);
+          
+          // Update the editor view with the new manuscript state
+          const updatedChapter = ms.chapters.find(c => c.name === editingChapter.chapter!.name);
+          if (updatedChapter) {
+            setEditingChapter({ chapter: updatedChapter, number: updatedChapter.chapterNumber });
+          }
+          resolve(b64);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleChapterReorder(chapterName: string, direction: "up" | "down") {
+    if (!activeManuscript) return;
+    const chapters = [...activeManuscript.chapters].sort((a, b) => a.chapterNumber - b.chapterNumber);
+    const index = chapters.findIndex((c) => c.name === chapterName);
+    if (index === -1) return;
+    
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= chapters.length) return;
+
+    try {
+      // Swap numbers
+      const ch1 = chapters[index];
+      const ch2 = chapters[targetIndex];
+      if (!ch1 || !ch2) return;
+      const tempNum = ch1.chapterNumber;
+      
+      await service.updateChapter(activeManuscript.id, ch1.name, {
+        chapterTitle: ch1.chapterTitle,
+        chapterContent: ch1.chapterContent,
+        chapterNumber: ch2.chapterNumber
+      });
+      const ms = await service.updateChapter(activeManuscript.id, ch2.name, {
+        chapterTitle: ch2.chapterTitle,
+        chapterContent: ch2.chapterContent,
+        chapterNumber: tempNum
+      });
+      setActiveManuscript(ms);
+    } catch {
+      toast.error("Failed to reorder chapters.");
+    }
+  }
+
+
+  if (initializing) {
+    return (
+      <AppShell allow={["author"]}>
+        <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-muted-foreground">
+          <Loader2 className="size-6 animate-spin" />
+          <p>Loading submission…</p>
+        </div>
+      </AppShell>
+    );
   }
 
   return (
@@ -379,60 +513,44 @@ function SubmitPage() {
         )}
 
         {step === 2 && (
-          <div>
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                handleFiles(e.dataTransfer.files);
-              }}
-              onClick={() => inputRef.current?.click()}
-              className={cn(
-                "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-14 text-center transition-colors",
-                dragging ? "border-foreground bg-muted" : "border-border hover:bg-muted/50",
-              )}
-            >
-              <FileUp className="size-6 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium">Drag &amp; drop your manuscript PDF</p>
-              <p className="mt-1 text-xs text-muted-foreground">.pdf only · maximum 50MB</p>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                className="hidden"
-                onChange={(e) => handleFiles(e.target.files)}
-              />
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-border pb-4">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">Manuscript Chapters</h2>
+                <p className="text-sm text-muted-foreground">Add chapters one by one. You can upload images within each chapter.</p>
+              </div>
             </div>
 
-            {fileError && (
-              <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                {fileError}
-              </p>
+            {editingChapter ? (
+              <ChapterEditor
+                chapterNumber={editingChapter.number}
+                {...(editingChapter.chapter ? { chapter: editingChapter.chapter } : {})}
+                onSave={handleChapterSave}
+                onCancel={() => setEditingChapter(null)}
+                onImageUpload={handleImageUpload}
+              />
+            ) : (
+              <ChapterList
+                chapters={activeManuscript?.chapters || []}
+                onAdd={() => {
+                  if (!activeManuscript) {
+                    syncDraft().then(() => {
+                      setEditingChapter({ number: 1 });
+                    });
+                  } else {
+                    const nextNum = (activeManuscript.chapters?.length || 0) + 1;
+                    setEditingChapter({ number: nextNum });
+                  }
+                }}
+                onEdit={(ch) => setEditingChapter({ chapter: ch, number: ch.chapterNumber })}
+                onDelete={handleChapterDelete}
+                onReorder={handleChapterReorder}
+              />
             )}
-
-            {file && (
-              <div className="mt-4 rounded-lg border border-border p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <FileText className="size-4 shrink-0" />
-                    <span className="truncate text-sm font-medium">{file.name}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {(file.size / 1024 / 1024).toFixed(1)} MB
-                  </span>
-                </div>
-                <Progress value={uploadPct} className="mt-3" />
-                <p className="mt-2 text-xs text-muted-foreground tabular-nums">
-                  {uploading ? `Uploading… ${Math.round(uploadPct)}%` : "Upload complete · 100%"}
-                </p>
-              </div>
+            
+            {!editingChapter && errors["chapters"] && (
+              <p className="rounded-md bg-destructive/10 p-3 text-xs text-destructive">{errors["chapters"]}</p>
             )}
-            {errors["file"] && <p className="mt-3 text-xs text-destructive">{errors["file"]}</p>}
           </div>
         )}
 
@@ -440,24 +558,34 @@ function SubmitPage() {
           <div className="grid gap-5 lg:grid-cols-2">
             <div className="rounded-lg border border-border">
               <div className="flex items-center justify-between border-b border-border px-4 py-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preview</span>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setPdfPage((p) => Math.max(1, p - 1))}>
-                    <ChevronLeft className="size-4" />
-                  </Button>
-                  <span className="text-xs tabular-nums">Page {pdfPage}</span>
-                  <Button variant="outline" size="sm" onClick={() => setPdfPage((p) => p + 1)}>
-                    <ChevronRight className="size-4" />
-                  </Button>
-                </div>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Content Preview</span>
               </div>
-              <div className="flex items-center justify-center bg-muted p-6">
-                {pdfUrl ? (
-                  <iframe src={pdfUrl} className="w-full h-[600px] rounded border" />
-                ) : (
-                  <div className="aspect-[3/4] w-full max-w-xs border border-border bg-background p-6 shadow-sm flex flex-col items-center justify-center">
-                    <p className="text-sm text-muted-foreground">No manuscript file uploaded</p>
+              <div className="max-h-[600px] overflow-y-auto bg-muted p-4 sm:p-6 space-y-6">
+                {!activeManuscript?.chapters?.length ? (
+                  <div className="flex h-32 items-center justify-center rounded border border-dashed border-border bg-background">
+                    <p className="text-sm text-muted-foreground">No chapters available</p>
                   </div>
+                ) : (
+                    activeManuscript.chapters.map(ch => (
+                        <div key={ch.name} className="space-y-4 bg-background p-6 rounded shadow-sm border border-border">
+                            <h3 className="font-serif text-xl border-b pb-2">Chapter {ch.chapterNumber}: {ch.chapterTitle}</h3>
+                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed">
+                                {ch.chapterContent.split('\n').map((p, i) => (
+                                    <p key={i}>{p}</p>
+                                ))}
+                            </div>
+                            {ch.images?.length > 0 && (
+                                <div className="mt-6 grid grid-cols-2 gap-4 border-t pt-4">
+                                    {ch.images.map(img => (
+                                        <div key={img.name} className="space-y-1">
+                                            <img src={img.imageFile} alt={img.caption} className="rounded object-cover w-full aspect-video" />
+                                            {img.caption && <p className="text-xs text-muted-foreground">{img.caption}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))
                 )}
               </div>
             </div>
@@ -467,20 +595,20 @@ function SubmitPage() {
                 <Sparkles className="size-4" />
                 <h3 className="text-sm font-semibold">AI Pre-flight Report</h3>
               </div>
-              {scanning || !report ? (
+              {scanning || !activeManuscript?.ai ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
                   <Loader2 className="size-5 animate-spin" />
-                  Scanning manuscript…
+                  Analyzing manuscript content…
                 </div>
               ) : (
                 <dl className="mt-4 space-y-3 text-sm">
-                  <Row label="Title matched" value={report.titleMatched ? "Yes" : "No"} />
-                  <Row label="Pages detected" value={String(report.detectedPages)} />
-                  <Row label="Readability" value={`${report.readability}/100`} badge />
-                  <Row label="Marketability" value={`${report.marketability}/100`} badge />
-                  <Row label="Overall AI score" value={`${report.score}%`} badge />
+                  <Row label="Title matched" value={activeManuscript.ai.titleMatched ? "Yes" : "No"} />
+                  <Row label="Chapters detected" value={String(activeManuscript.chapters.length)} />
+                  <Row label="Readability" value={`${activeManuscript.ai.readability}/100`} badge />
+                  <Row label="Marketability" value={`${activeManuscript.ai.marketability}/100`} badge />
+                  <Row label="Overall AI score" value={`${activeManuscript.ai.score}%`} badge />
                   <p className="rounded-md bg-muted p-3 text-xs leading-relaxed text-muted-foreground">
-                    {report.summary}
+                    {activeManuscript.ai.summary}
                   </p>
                 </dl>
               )}
@@ -499,37 +627,44 @@ function SubmitPage() {
               <Row label="Keywords" value={keywords.join(", ") || "—"} />
               <Row label="Page count" value={pageCount || "—"} />
               <Row label="Launch date" value={launchDate || "—"} />
-              <Row label="File" value={file?.name ?? "—"} />
-              <Row label="AI score" value={report ? `${report.score}%` : "—"} />
+              <Row label="Chapters" value={`${activeManuscript?.chapters?.length || 0} chapters`} />
+              <Row label="AI score" value={activeManuscript?.ai ? `${activeManuscript.ai.score}%` : "—"} />
             </div>
-            <div className="mt-4 space-y-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Abstract</p>
-                <p className="mt-1 text-sm">{abstract}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Synopsis</p>
-                <p className="mt-1 text-sm">{synopsis}</p>
-              </div>
+            
+            <div className="mt-6 mb-2 border-t border-border pt-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-destructive">Legal Declaration</h3>
+            </div>
+            <div className="space-y-4 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+                <label className="flex items-start gap-3">
+                    <Checkbox id="legal" checked={legalAccepted} onCheckedChange={(v) => setLegalAccepted(v === true)} className="mt-0.5 border-destructive/50 data-[state=checked]:bg-destructive data-[state=checked]:text-destructive-foreground" />
+                    <div className="space-y-1">
+                        <span className="text-sm font-medium">I accept the Legal Declaration</span>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            By checking this box, I confirm that I am the sole author of this manuscript and it does not infringe upon any existing copyrights. I assume full legal responsibility for its contents.
+                        </p>
+                    </div>
+                </label>
+                {errors["legal"] && <p className="text-xs text-destructive">{errors["legal"]}</p>}
             </div>
 
-            <label className="mt-6 flex items-start gap-3 rounded-lg border border-border p-4">
+            <label className="mt-4 flex items-start gap-3 rounded-lg border border-border p-4">
               <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
-              <span className="text-sm">I confirm this is my original work.</span>
+              <span className="text-sm">I confirm all information is correct and ready for transmission.</span>
             </label>
+             {errors["confirm"] && <p className="ml-3 mt-1 text-xs text-destructive">{errors["confirm"]}</p>}
           </div>
         )}
 
         <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
-          <Button variant="outline" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+          <Button variant="outline" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || editingChapter !== null}>
             <ChevronLeft className="size-4" /> Back
           </Button>
           {step < STEPS.length - 1 ? (
-            <Button onClick={next} disabled={step === 3 && scanning}>
+            <Button onClick={next} disabled={(step === 3 && scanning) || editingChapter !== null}>
               Continue <ChevronRight className="size-4" />
             </Button>
           ) : (
-            <Button onClick={() => setDialogOpen(true)} disabled={!confirmed}>
+            <Button onClick={() => setDialogOpen(true)} disabled={!confirmed || !legalAccepted}>
               Submit Manuscript
             </Button>
           )}
@@ -541,8 +676,7 @@ function SubmitPage() {
           <DialogHeader>
             <DialogTitle>Submit manuscript?</DialogTitle>
             <DialogDescription>
-              &quot;{title}&quot; will enter the editorial pipeline and be queued for editor review. You can still
-              upload revisions later.
+              &quot;{title}&quot; will enter the editorial pipeline and be queued for editor review. You will not be able to edit chapters while it is under review.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -562,7 +696,7 @@ function SubmitPage() {
 
 function Row({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border pb-2 last:border-0">
+    <div className="flex items-center justify-between gap-4 border-b border-border pb-2 last:border-0 hover:bg-muted/50 rounded-sm px-1 transition-colors">
       <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
       {badge ? (
         <span className="rounded-full bg-foreground px-2.5 py-0.5 text-xs font-medium text-background tabular-nums">

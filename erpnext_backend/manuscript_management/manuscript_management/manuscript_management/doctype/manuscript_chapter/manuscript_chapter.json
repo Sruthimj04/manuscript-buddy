@@ -1,0 +1,45 @@
+{
+  "name": "Manuscript Chapter",
+  "module": "Manuscript Management",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "is_submittable": 0,
+  "issingle": 0,
+  "istable": 1,
+  "custom": 1,
+  "fields": [
+    {
+      "fieldname": "chapter_number",
+      "label": "Chapter Number",
+      "fieldtype": "Int",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "chapter_title",
+      "label": "Chapter Title",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "chapter_content",
+      "label": "Chapter Content",
+      "fieldtype": "Text Editor"
+    },
+    {
+      "fieldname": "section_images",
+      "label": "Images",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "images",
+      "label": "Chapter Images",
+      "fieldtype": "Table",
+      "options": "Manuscript Chapter Image"
+    }
+  ],
+  "permissions": []
+}

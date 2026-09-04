@@ -15,6 +15,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
@@ -51,6 +52,11 @@ const EditorRoute = EditorRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubmitRoute = SubmitRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/submit': typeof SubmitRoute
   '/admin/editors': typeof AdminEditorsRoute
   '/admin/manuscripts': typeof AdminManuscriptsRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/submit': typeof SubmitRoute
   '/admin': typeof AdminIndexRoute
   '/admin/editors': typeof AdminEditorsRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/submit': typeof SubmitRoute
   '/admin/_layout': typeof AdminLayoutRoute
   '/admin/editors': typeof AdminEditorsRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/editor'
     | '/settings'
+    | '/signup'
     | '/submit'
     | '/admin/editors'
     | '/admin/manuscripts'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/editor'
     | '/settings'
+    | '/signup'
     | '/submit'
     | '/admin'
     | '/admin/editors'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/editor'
     | '/settings'
+    | '/signup'
     | '/submit'
     | '/admin/_layout'
     | '/admin/editors'
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   EditorRoute: typeof EditorRoute
   SettingsRoute: typeof SettingsRoute
+  SignupRoute: typeof SignupRoute
   SubmitRoute: typeof SubmitRoute
   ManuscriptIdRoute: typeof ManuscriptIdRoute
 }
@@ -229,6 +242,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/submit': {
@@ -308,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   EditorRoute: EditorRoute,
   SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
   SubmitRoute: SubmitRoute,
   ManuscriptIdRoute: ManuscriptIdRoute,
 }

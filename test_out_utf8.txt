@@ -1,0 +1,57 @@
+﻿python : Traceback 
+(most recent call 
+last):
+At line:1 char:1
++ python test_e2e.py 
+> test_out.txt 2>&1; 
+python -c 
+"open('test_out_utf 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Traceba   
+ ck (most recent     
+call last)::Stri    
+ng) [], RemoteEx    
+ception
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+  File "C:\Users\rahu
+l\OneDrive\Booksubmis
+sion_grp2\manuscript-
+buddy\test_e2e.py", 
+line 95, in <module>
+    test_flow()
+  File "C:\Users\rahu
+l\OneDrive\Booksubmis
+sion_grp2\manuscript-
+buddy\test_e2e.py", 
+line 60, in test_flow
+    assert active_ms 
+and 
+active_ms.get("id") 
+== ms_id, "One 
+active submission 
+rule failed"
+                     
+    ^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
+AssertionError: One 
+active submission 
+rule failed
+1. Sending OTP...
+200 {"message":{"success":true,"message":"OTP sent to your phone number"}}
+
+2. Verifying OTP...
+200 {"message":{"success":true,"user":{"name":"E2E Test User","email":"test_c652@example.com","role":"author"}},"home_page":"desk","full_name":"E2E Test User","_server_messages":"[\"{\\\"message\\\":\\\"Newly created user <strong>test_c652@example.com</strong> has no roles enabled.\\\",\\\"as_table\\\":false,\\\"title\\\":\\\"No Roles Specified\\\",\\\"indicator\\\":\\\"orange\\\",\\\"primary_action\\\":{\\\"label\\\":\\\"Add Roles\\\",\\\"client_action\\\":\\\"frappe.set_route\\\",\\\"args\\\":[\\\"Form\\\",\\\"User\\\",\\\"test_c652@example.com\\\"]}}\"]"}
+
+3. Creating Draft Manuscript...
+
+4. Checking one-active-submission rule...
+STEP 4 RESPONSE: {}
+Active Submission returned: None
+TEST FAILED: One active submission rule failed

@@ -5,6 +5,7 @@
   "document_type": "",
   "engine": "InnoDB",
   "istable": 1,
+  "custom": 1,
   "fields": [
     {
       "fieldname": "actor",

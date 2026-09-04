@@ -50,12 +50,18 @@ function DashboardPage() {
             A real editor. A fair deal. From first submission to published book — we're with you the whole way.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/submit">
-            <Plus className="size-4" />
-            Submit New Manuscript
-          </Link>
-        </Button>
+        {active ? (
+          <Button asChild variant="outline">
+            <Link to="/submit">Continue Draft</Link>
+          </Button>
+        ) : (
+          <Button asChild>
+            <Link to="/submit">
+              <Plus className="size-4" />
+              Submit New Manuscript
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

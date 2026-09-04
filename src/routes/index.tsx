@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { LoremMark } from "@/components/pub/LoremMark";
@@ -133,6 +133,12 @@ function LoginPage() {
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Sign in with your ERPNext credentials. Data is stored on your Frappe server.
+          </p>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            New author?{" "}
+            <Link to="/signup" className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80">
+              Sign up here
+            </Link>
           </p>
         </div>
       </div>

@@ -36,11 +36,37 @@ export interface AIReport {
   titleMatched: boolean;
 }
 
+// ── Chapter types ─────────────────────────────────────────────────────────── //
+
+export interface ChapterImage {
+  name: string;
+  imageFile: string;
+  caption: string;
+  displayOrder: number;
+}
+
+export interface Chapter {
+  name: string;
+  chapterNumber: number;
+  chapterTitle: string;
+  chapterContent: string;
+  images: ChapterImage[];
+}
+
+export interface ChapterData {
+  chapterNumber?: number;
+  chapterTitle: string;
+  chapterContent?: string;
+}
+
+// ── Manuscript types ──────────────────────────────────────────────────────── //
+
 /** Fields shared by every manuscript, regardless of workflow state. */
 export interface ManuscriptBase {
   id: string;
   title: string;
   author: string;
+  authorEmail?: string | undefined;
   submittedAt: string;
   editor: string | null;
   genre: string;
@@ -56,6 +82,9 @@ export interface ManuscriptBase {
   ai: AIReport | null;
   timeline: TimelineEvent[];
   notes: EditorNote[];
+  chapters: Chapter[];
+  legalDeclaration: boolean;
+  legalAcceptedAt?: string | null;
 }
 
 /** States other than "Rejected" never carry a rejection reason. */
@@ -122,4 +151,12 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+}
+
+// ── Signup types ──────────────────────────────────────────────────────────── //
+
+export interface AuthorSignupData {
+  fullName: string;
+  email: string;
+  phone: string;
 }
