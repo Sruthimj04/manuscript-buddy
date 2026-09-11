@@ -1,0 +1,33 @@
+{
+  "name": "Manuscript Chapter Image",
+  "module": "Manuscript Management",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "is_submittable": 0,
+  "issingle": 0,
+  "istable": 1,
+  "custom": 1,
+  "fields": [
+    {
+      "fieldname": "image_file",
+      "label": "Image",
+      "fieldtype": "Attach Image",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "caption",
+      "label": "Caption",
+      "fieldtype": "Data",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "display_order",
+      "label": "Display Order",
+      "fieldtype": "Int",
+      "default": 0,
+      "in_list_view": 1
+    }
+  ],
+  "permissions": []
+}

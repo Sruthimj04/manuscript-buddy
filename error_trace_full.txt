@@ -1,0 +1,72 @@
+Traceback with variables (most recent call last):
+  File "apps/frappe/frappe/app.py", line 121, in application
+    response = frappe.api.handle(request)
+      request = <Request 'http://localhost/api/method/manuscript_management.api.create_manuscript' [POST]>
+      response = None
+      e = 'ManuscriptSubmission' object has no attribute 'naming_series'
+  File "apps/frappe/frappe/api/__init__.py", line 63, in handle
+    data = endpoint(**arguments)
+      request = <Request 'http://localhost/api/method/manuscript_management.api.create_manuscript' [POST]>
+      endpoint = <function handle_rpc_call at 0x7286d1a8fcc0>
+      arguments = {'method': 'manuscript_management.api.create_manuscript'}
+  File "apps/frappe/frappe/api/v1.py", line 40, in handle_rpc_call
+    return frappe.handler.handle()
+      method = 'manuscript_management.api.create_manuscript'
+      frappe = <module 'frappe' from 'apps/frappe/frappe/__init__.py'>
+  File "apps/frappe/frappe/handler.py", line 53, in handle
+    data = execute_cmd(cmd)
+      cmd = 'manuscript_management.api.create_manuscript'
+      data = None
+  File "apps/frappe/frappe/handler.py", line 86, in execute_cmd
+    return frappe.call(method, **frappe.form_dict)
+      cmd = 'manuscript_management.api.create_manuscript'
+      from_async = False
+      server_script = None
+      method = <function create_manuscript at 0x7286c6c973d0>
+  File "apps/frappe/frappe/__init__.py", line 1131, in call
+    return fn(*args, **newargs)
+      fn = <function create_manuscript at 0x7286c6c973d0>
+      args = ()
+      kwargs = {'data': {'title': 'Avatar', 'author': 'Test', 'genre': 'Fiction', 'audience': 'General', 'keywords': ['action', 'romance'], 'abstract': 'A visually groundbreaking epic set on the alien world of Pandora, Avatar follows a paraplegic ex‑Marine who becomes part of the Na’vi people through a genetically engineered avatar. Torn between duty to his human employers and loyalty to the indigenous tribe, he must choose where he truly belongs. It’s a sweeping story of love, survival, and resistance against exploitation.', 'synopsis': 'In the mid‑22nd century, Earth’s resources are depleted, and humans seek to mine Pandora’s valuable mineral, unobtanium. Jake Sully, a disabled former Marine, is recruite...edPages': 355, 'titleMatched': True, 'summary': 'Pre-flight scan of "Avatar" completed. Structure and metadata parsed successfully with no extraction errors. Lexical density and chapter balance fall within the expected band for this category.'}}, 'cmd': 'manuscript_management.api.create_manuscript'}
+      newargs = {'data': {'title': 'Avatar', 'author': 'Test', 'genre': 'Fiction', 'audience': 'General', 'keywords': ['action', 'romance'], 'abstract': 'A visually groundbreaking epic set on the alien world of Pandora, Avatar follows a paraplegic ex‑Marine who becomes part of the Na’vi people through a genetically engineered avatar. Torn between duty to his human employers and loyalty to the indigenous tribe, he must choose where he truly belongs. It’s a sweeping story of love, survival, and resistance against exploitation.', 'synopsis': 'In the mid‑22nd century, Earth’s resources are depleted, and humans seek to mine Pandora’s valuable mineral, unobtanium. Jake Sully, a disabled former Marine, is recruite...lue': 57}, {'label': 'Act III', 'value': 82}], 'detectedPages': 355, 'titleMatched': True, 'summary': 'Pre-flight scan of "Avatar" completed. Structure and metadata parsed successfully with no extraction errors. Lexical density and chapter balance fall within the expected band for this category.'}}}
+  File "apps/frappe/frappe/utils/typing_validations.py", line 36, in wrapper
+    return func(*args, **kwargs)
+      args = ()
+      kwargs = {'data': {'title': 'Avatar', 'author': 'Test', 'genre': 'Fiction', 'audience': 'General', 'keywords': ['action', 'romance'], 'abstract': 'A visually groundbreaking epic set on the alien world of Pandora, Avatar follows a paraplegic ex‑Marine who becomes part of the Na’vi people through a genetically engineered avatar. Torn between duty to his human employers and loyalty to the indigenous tribe, he must choose where he truly belongs. It’s a sweeping story of love, survival, and resistance against exploitation.', 'synopsis': 'In the mid‑22nd century, Earth’s resources are depleted, and humans seek to mine Pandora’s valuable mineral, unobtanium. Jake Sully, a disabled former Marine, is recruite...lue': 57}, {'label': 'Act III', 'value': 82}], 'detectedPages': 355, 'titleMatched': True, 'summary': 'Pre-flight scan of "Avatar" completed. Structure and metadata parsed successfully with no extraction errors. Lexical density and chapter balance fall within the expected band for this category.'}}}
+      apply_condition = <function _in_request_or_test at 0x7286d2f90720>
+      func = <function create_manuscript at 0x7286c6c975e0>
+  File "apps/manuscript_management/manuscript_management/api.py", line 200, in create_manuscript
+    doc.insert(ignore_permissions=True)
+      data = {'title': 'Avatar', 'author': 'Test', 'genre': 'Fiction', 'audience': 'General', 'keywords': ['action', 'romance'], 'abstract': 'A visually groundbreaking epic set on the alien world of Pandora, Avatar follows a paraplegic ex‑Marine who becomes part of the Na’vi people through a genetically engineered avatar. Torn between duty to his human employers and loyalty to the indigenous tribe, he must choose where he truly belongs. It’s a sweeping story of love, survival, and resistance against exploitation.', 'synopsis': 'In the mid‑22nd century, Earth’s resources are depleted, and humans seek to mine Pandora’s valuable mineral, unobtanium. Jake Sully, a disabled former Marine, is recruited to oper...alue': 57}, {'label': 'Act III', 'value': 82}], 'detectedPages': 355, 'titleMatched': True, 'summary': 'Pre-flight scan of "Avatar" completed. Structure and metadata parsed successfully with no extraction errors. Lexical density and chapter balance fall within the expected band for this category.'}}
+      doc = Manuscript Submission (unsaved)
+      ai = {'score': 68, 'genreConfidence': [{'label': 'Fiction', 'value': 56}, {'label': 'General', 'value': 44}], 'readability': 55, 'marketability': 73, 'pacing': [{'label': 'Act I', 'value': 77}, {'label': 'Act II', 'value': 57}, {'label': 'Act III', 'value': 82}], 'detectedPages': 355, 'titleMatched': True, 'summary': 'Pre-flight scan of "Avatar" completed. Structure and metadata parsed successfully with no extraction errors. Lexical density and chapter balance fall within the expected band for this category.'}
+  File "apps/frappe/frappe/model/document.py", line 461, in insert
+    self.set_new_name(set_name=set_name, set_child_names=set_child_names)
+      self = Manuscript Submission (unsaved)
+      ignore_permissions = True
+      ignore_links = None
+      ignore_if_duplicate = False
+      ignore_mandatory = None
+      set_name = None
+      set_child_names = True
+  File "apps/frappe/frappe/model/document.py", line 726, in set_new_name
+    set_new_name(self)
+      self = Manuscript Submission (unsaved)
+      force = False
+      set_name = None
+      set_child_names = True
+      autoname = 'naming_series:'
+  File "apps/frappe/frappe/model/naming.py", line 192, in set_new_name
+    set_name_from_naming_options(autoname, doc)
+      doc = Manuscript Submission (unsaved)
+      meta = DocType (Manuscript Submission)
+      autoname = 'naming_series:'
+  File "apps/frappe/frappe/model/naming.py", line 227, in set_name_from_naming_options
+    set_name_by_naming_series(doc)
+      autoname = 'naming_series:'
+      doc = Manuscript Submission (unsaved)
+      _autoname = 'naming_series:'
+  File "apps/frappe/frappe/model/naming.py", line 262, in set_name_by_naming_series
+    if not doc.naming_series:
+      doc = Manuscript Submission (unsaved)
+builtins.AttributeError: 'ManuscriptSubmission' object has no attribute 'naming_series'

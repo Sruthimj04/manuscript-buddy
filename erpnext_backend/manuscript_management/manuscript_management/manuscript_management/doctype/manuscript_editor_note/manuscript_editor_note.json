@@ -1,0 +1,34 @@
+{
+  "name": "Manuscript Editor Note",
+  "module": "Manuscript Management",
+  "doctype": "DocType",
+  "document_type": "",
+  "engine": "InnoDB",
+  "istable": 1,
+  "custom": 1,
+  "fields": [
+    {
+      "fieldname": "note_author",
+      "label": "Author",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "created_at",
+      "label": "Created At",
+      "fieldtype": "Datetime",
+      "reqd": 1,
+      "in_list_view": 1,
+      "default": "Now"
+    },
+    {
+      "fieldname": "body",
+      "label": "Note Body",
+      "fieldtype": "Text",
+      "reqd": 1,
+      "in_list_view": 1
+    }
+  ],
+  "permissions": []
+}

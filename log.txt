@@ -1,0 +1,50 @@
+[2026-08-08 09:29:12 +0000] [13] [INFO] Booting worker with pid: 13
+[2026-08-08 09:35:29 +0000] [1] [INFO] Handling signal: term
+[2026-08-08 09:35:29 +0000] [12] [INFO] Worker exiting (pid: 12)
+[2026-08-08 09:35:29 +0000] [13] [INFO] Worker exiting (pid: 13)
+[2026-08-08 09:35:29 +0000] [1] [INFO] Shutting down: Master
+Linking fresh assets to volume...
+Booting Gunicorn with 2 workers and 4 threads...
+[2026-08-08 09:35:30 +0000] [1] [INFO] Starting gunicorn 23.0.0
+[2026-08-08 09:35:30 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-08-08 09:35:30 +0000] [1] [INFO] Using worker: gthread
+[2026-08-08 09:35:30 +0000] [12] [INFO] Booting worker with pid: 12
+[2026-08-08 09:35:30 +0000] [13] [INFO] Booting worker with pid: 13
+Linking fresh assets to volume...
+Booting Gunicorn with 2 workers and 4 threads...
+[2026-08-09 16:25:24 +0000] [1] [INFO] Starting gunicorn 23.0.0
+[2026-08-09 16:25:24 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-08-09 16:25:24 +0000] [1] [INFO] Using worker: gthread
+[2026-08-09 16:25:25 +0000] [12] [INFO] Booting worker with pid: 12
+[2026-08-09 16:25:25 +0000] [13] [INFO] Booting worker with pid: 13
+Linking fresh assets to volume...
+Booting Gunicorn with 2 workers and 4 threads...
+[2026-08-26 05:54:30 +0000] [1] [INFO] Starting gunicorn 23.0.0
+[2026-08-26 05:54:30 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-08-26 05:54:30 +0000] [1] [INFO] Using worker: gthread
+[2026-08-26 05:54:30 +0000] [12] [INFO] Booting worker with pid: 12
+[2026-08-26 05:54:30 +0000] [13] [INFO] Booting worker with pid: 13
+[2026-08-26 05:54:36 +0000] [1] [INFO] Handling signal: term
+[2026-08-26 05:54:36 +0000] [13] [INFO] Worker exiting (pid: 13)
+[2026-08-26 05:54:36 +0000] [12] [INFO] Worker exiting (pid: 12)
+[2026-08-26 05:54:36 +0000] [1] [INFO] Shutting down: Master
+Linking fresh assets to volume...
+Booting Gunicorn with 2 workers and 4 threads...
+[2026-08-26 05:54:45 +0000] [1] [INFO] Starting gunicorn 23.0.0
+[2026-08-26 05:54:45 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-08-26 05:54:45 +0000] [1] [INFO] Using worker: gthread
+[2026-08-26 05:54:45 +0000] [12] [INFO] Booting worker with pid: 12
+[2026-08-26 05:54:46 +0000] [13] [INFO] Booting worker with pid: 13
+/home/frappe/frappe-bench/apps/frappe/frappe/model/document.py:172: UserWarning: Virtual doctypes don't support lazy loading
+  if controller := get_lazy_controller(doctype):
+[2026-08-26 09:21:46 +0000] [1] [INFO] Handling signal: term
+[2026-08-26 09:21:46 +0000] [13] [INFO] Worker exiting (pid: 13)
+[2026-08-26 09:21:46 +0000] [12] [INFO] Worker exiting (pid: 12)
+[2026-08-26 09:21:46 +0000] [1] [INFO] Shutting down: Master
+Linking fresh assets to volume...
+Booting Gunicorn with 2 workers and 4 threads...
+[2026-08-26 09:21:49 +0000] [1] [INFO] Starting gunicorn 23.0.0
+[2026-08-26 09:21:49 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-08-26 09:21:49 +0000] [1] [INFO] Using worker: gthread
+[2026-08-26 09:21:49 +0000] [12] [INFO] Booting worker with pid: 12
+[2026-08-26 09:21:49 +0000] [13] [INFO] Booting worker with pid: 13

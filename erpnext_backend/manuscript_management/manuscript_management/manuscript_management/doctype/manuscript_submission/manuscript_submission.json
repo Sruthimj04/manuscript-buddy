@@ -1,0 +1,304 @@
+{
+  "name": "Manuscript Submission",
+  "module": "Manuscript Management",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "is_submittable": 0,
+  "issingle": 0,
+  "istable": 0,
+  "custom": 1,
+  "autoname": "format:MS-{#####}",
+  "title_field": "title",
+  "search_fields": "title, author, state",
+  "sort_field": "submitted_at",
+  "sort_order": "DESC",
+  "fields": [
+    {
+      "fieldname": "title",
+      "label": "Title",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "author",
+      "label": "Author",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_basic",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "state",
+      "label": "State",
+      "fieldtype": "Select",
+      "options": "Draft\nAI Processing\nPending Editor Review\nRevisions Requested\nApproved\nPublished\nRejected",
+      "default": "Draft",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "submitted_at",
+      "label": "Submitted At",
+      "fieldtype": "Datetime",
+      "in_list_view": 1,
+      "default": "Now"
+    },
+    {
+      "fieldname": "assigned_editor",
+      "label": "Assigned Editor",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_genre",
+      "label": "Genre & Audience",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "genre",
+      "label": "Primary Genre",
+      "fieldtype": "Select",
+      "options": "Fiction\nNon-Fiction\nScience Fiction\nDrama\nBiography\nBusiness\nPoetry\nAcademic",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "secondary_genre",
+      "label": "Secondary Genre",
+      "fieldtype": "Select",
+      "options": "\nFiction\nNon-Fiction\nScience Fiction\nDrama\nBiography\nBusiness\nPoetry\nAcademic"
+    },
+    {
+      "fieldname": "column_break_genre",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "audience",
+      "label": "Target Audience",
+      "fieldtype": "Select",
+      "options": "General\nYoung Adult\nAcademic\nProfessional\nChildren",
+      "default": "General"
+    },
+    {
+      "fieldname": "keywords",
+      "label": "Keywords",
+      "fieldtype": "Small Text",
+      "description": "Comma-separated keywords"
+    },
+    {
+      "fieldname": "section_content",
+      "label": "Content Details",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "abstract",
+      "label": "Executive Abstract",
+      "fieldtype": "Text"
+    },
+    {
+      "fieldname": "synopsis",
+      "label": "Detailed Synopsis",
+      "fieldtype": "Text"
+    },
+    {
+      "fieldname": "column_break_content",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "page_count",
+      "label": "Estimated Page Count",
+      "fieldtype": "Int"
+    },
+    {
+      "fieldname": "launch_date",
+      "label": "Target Launch Date",
+      "fieldtype": "Date"
+    },
+    {
+      "fieldname": "section_file",
+      "label": "Manuscript File",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "manuscript_file",
+      "label": "Manuscript PDF",
+      "fieldtype": "Attach",
+      "description": "Upload manuscript as PDF (max 50 MB)"
+    },
+    {
+      "fieldname": "file_name",
+      "label": "File Name",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "file_size",
+      "label": "File Size (bytes)",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_rejection",
+      "label": "Rejection",
+      "fieldtype": "Section Break",
+      "depends_on": "eval:doc.state=='Rejected'"
+    },
+    {
+      "fieldname": "rejection_reason",
+      "label": "Rejection Reason",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "section_ai",
+      "label": "AI Report",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "ai_score",
+      "label": "AI Score",
+      "fieldtype": "Int"
+    },
+    {
+      "fieldname": "ai_readability",
+      "label": "Readability",
+      "fieldtype": "Int"
+    },
+    {
+      "fieldname": "ai_marketability",
+      "label": "Marketability",
+      "fieldtype": "Int"
+    },
+    {
+      "fieldname": "ai_detected_pages",
+      "label": "Detected Pages",
+      "fieldtype": "Int"
+    },
+    {
+      "fieldname": "ai_title_matched",
+      "label": "Title Matched",
+      "fieldtype": "Check",
+      "default": 0
+    },
+    {
+      "fieldname": "ai_summary",
+      "label": "AI Summary",
+      "fieldtype": "Text"
+    },
+    {
+      "fieldname": "ai_genre_confidence",
+      "label": "Genre Confidence",
+      "fieldtype": "Small Text",
+      "description": "JSON array: [{\"label\":\"...\",\"value\":N},...]"
+    },
+    {
+      "fieldname": "ai_pacing",
+      "label": "Pacing Data",
+      "fieldtype": "Small Text",
+      "description": "JSON array: [{\"label\":\"...\",\"value\":N},...]"
+    },
+    {
+      "fieldname": "section_timeline",
+      "label": "Timeline",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "timeline_events",
+      "label": "Timeline Events",
+      "fieldtype": "Table",
+      "options": "Manuscript Timeline Event"
+    },
+    {
+      "fieldname": "section_notes",
+      "label": "Editor Notes",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "editor_notes",
+      "label": "Editor Notes",
+      "fieldtype": "Table",
+      "options": "Manuscript Editor Note"
+    },
+    {
+      "fieldname": "section_chapters",
+      "label": "Chapters",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "chapters",
+      "label": "Chapters",
+      "fieldtype": "Table",
+      "options": "Manuscript Chapter"
+    },
+    {
+      "fieldname": "section_legal",
+      "label": "Legal Declaration",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "legal_declaration",
+      "label": "Original Work Declaration",
+      "fieldtype": "Check",
+      "default": 0
+    },
+    {
+      "fieldname": "legal_accepted_at",
+      "label": "Declaration Accepted At",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "legal_accepted_by",
+      "label": "Declaration Accepted By",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "author_email",
+      "label": "Author Email",
+      "fieldtype": "Data",
+      "description": "Author's user account email",
+      "length": 140
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Manuscript Author",
+      "read": 1,
+      "write": 1,
+      "create": 1
+    },
+    {
+      "role": "Manuscript Editor",
+      "read": 1,
+      "write": 1
+    },
+    {
+      "role": "Manuscript Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ]
+}
