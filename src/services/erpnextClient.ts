@@ -10,7 +10,7 @@
 
 // In dev mode, Vite proxy forwards /api/* to ERPNext (configured in vite.config.ts).
 // In production, set VITE_ERPNEXT_URL to the ERPNext origin, or use a reverse proxy.
-const BASE_URL = (import.meta.env["VITE_ERPNEXT_URL"] as string | undefined) ?? "";
+const BASE_URL = (import.meta.env["VITE_API_URL"] as string | undefined) ?? (import.meta.env["VITE_ERPNEXT_URL"] as string | undefined) ?? "";
 
 // ── Core request helper ──────────────────────────────────────────────────── //
 
@@ -35,21 +35,33 @@ export class FrappeError extends Error {
   }
 }
 
+function getStoredToken(): string | null {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return localStorage.getItem("token");
+  }
+  return null;
+}
+
 async function request<T = unknown>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "X-Frappe-CSRF-Token": getCsrfToken(),
+    ...(options.headers as Record<string, string> ?? {}),
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   const res = await fetch(url, {
     ...options,
     credentials: "include" as RequestCredentials,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "X-Frappe-CSRF-Token": getCsrfToken(),
-      ...(options.headers ?? {}),
-    },
+    headers,
   });
 
   if (!res.ok) {
@@ -136,6 +148,10 @@ export async function login(
 
   const data = await res.json();
 
+  if (data.access_token && typeof window !== "undefined") {
+    localStorage.setItem("token", data.access_token);
+  }
+
   // After login, Frappe returns a CSRF token in a cookie — capture it
   const match = document.cookie.match(/csrf_token=([^;]+)/);
   if (match?.[1]) setCsrfToken(match[1]);
@@ -147,6 +163,9 @@ export async function login(
  * Logout from Frappe.
  */
 export async function logout(): Promise<void> {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("token");
+  }
   await request("/api/method/logout", { method: "POST" });
   setCsrfToken("");
 }
