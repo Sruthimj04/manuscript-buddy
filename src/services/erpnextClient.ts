@@ -175,10 +175,22 @@ export async function logout(): Promise<void> {
  * Returns the user email or null if not logged in.
  */
 export async function getLoggedUser(): Promise<string | null> {
+  const token = getStoredToken();
+  if (!token) return null;
+
   try {
     const user = await request<string>("/api/method/frappe.auth.get_logged_user");
-    return user && user !== "Guest" ? user : null;
+    if (user && user !== "Guest") {
+      return user;
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+    }
+    return null;
   } catch {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+    }
     return null;
   }
 }

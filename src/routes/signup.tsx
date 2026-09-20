@@ -28,7 +28,7 @@ type Phase = "details" | "otp";
 const RESEND_COOLDOWN = 30;
 
 function SignupPage() {
-  const { role: activeRole, loading } = useApp();
+  const { role: activeRole, authStatus } = useApp();
   const navigate = useNavigate();
 
   const [phase, setPhase] = useState<Phase>("details");
@@ -45,8 +45,18 @@ function SignupPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (!loading && activeRole) void navigate({ to: ROLE_HOME[activeRole], replace: true });
-  }, [loading, activeRole, navigate]);
+    if (authStatus === "authenticated" && activeRole) {
+      void navigate({ to: ROLE_HOME[activeRole], replace: true });
+    }
+  }, [authStatus, activeRole, navigate]);
+
+  if (authStatus === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Resend cooldown timer
   useEffect(() => {
