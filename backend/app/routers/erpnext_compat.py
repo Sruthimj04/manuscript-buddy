@@ -41,8 +41,12 @@ async def compat_login(request: Request, response: Response, db: Session = Depen
         raise HTTPException(status_code=400, detail="Missing username/email or password")
         
     user = db.query(User).filter((User.email == usr) | (User.full_name.ilike(usr))).first()
-    if not user or not user.hashed_password or not verify_password(pwd, user.hashed_password):
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid login credentials")
+
+    if user.hashed_password:
+        if not verify_password(pwd, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Invalid login credentials")
         
     token_data = {"sub": user.id, "email": user.email, "role": user.role}
     access_token = create_access_token(data=token_data)
@@ -53,6 +57,9 @@ async def compat_login(request: Request, response: Response, db: Session = Depen
     
     return {
         "message": "Logged In",
+        "access_token": access_token,
+        "token": access_token,
+        "token_type": "bearer",
         "full_name": user.full_name,
         "home_page": "/dashboard"
     }
@@ -109,22 +116,35 @@ async def author_verify_otp(request: Request, response: Response, db: Session = 
     data = await get_request_data(request)
     mobile = str(data.get("mobile", ""))
     otp = str(data.get("otp", ""))
-    full_name = str(data.get("full_name", "Author"))
+    full_name = str(data.get("full_name", data.get("fullName", "Author")))
     email = str(data.get("email", f"user_{mobile.replace('+', '')}@example.com")).lower()
+    password = str(data.get("password", data.get("pwd", "")))
     
     is_valid = do_verify_otp(mobile, otp)
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid OTP")
         
     user = db.query(User).filter((User.email == email) | (User.phone == mobile)).first()
+    hashed_pwd = hash_password(password) if password else (user.hashed_password if user else None)
+
     if not user:
         user = User(
             email=email,
             full_name=full_name,
             phone=mobile,
-            role="author"
+            role="author",
+            hashed_password=hashed_pwd
         )
         db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        if full_name and user.full_name in ("Author", "Guest"):
+            user.full_name = full_name
+        if email and "example.com" in user.email and "@" in email:
+            user.email = email
+        if hashed_pwd:
+            user.hashed_password = hashed_pwd
         db.commit()
         db.refresh(user)
         
@@ -138,6 +158,9 @@ async def author_verify_otp(request: Request, response: Response, db: Session = 
     return {
         "message": {
             "success": True,
+            "access_token": access_token,
+            "token": access_token,
+            "token_type": "bearer",
             "user": {
                 "name": user.full_name,
                 "email": user.email,

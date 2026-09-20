@@ -11,6 +11,7 @@ interface AppState {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string, role: Role) => Promise<void>;
+  setAuthSession: (token: string, userData: User) => void;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -40,6 +41,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const setAuthSession = useCallback((token: string, userData: User) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", token);
+    }
+    setUser(userData);
+    setAuthStatus("authenticated");
   }, []);
 
   // Check for existing session on mount
@@ -129,10 +138,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       login,
+      setAuthSession,
       logout,
       refresh,
     }),
-    [user, authStatus, manuscripts, loading, error, login, logout, refresh],
+    [user, authStatus, manuscripts, loading, error, login, setAuthSession, logout, refresh],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

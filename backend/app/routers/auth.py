@@ -122,16 +122,24 @@ def verify_otp(payload: VerifyOtpRequest, response: Response, db: Session = Depe
     full_name = payload.full_name or f"Author ({payload.mobile})"
     
     user = db.query(User).filter((User.email == email) | (User.phone == payload.mobile)).first()
+    hashed_pwd = hash_password(payload.password) if hasattr(payload, "password") and payload.password else None
+
     if not user:
         user = User(
             email=email,
             full_name=full_name,
             phone=payload.mobile,
-            role="author"
+            role="author",
+            hashed_password=hashed_pwd
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        if hashed_pwd:
+            user.hashed_password = hashed_pwd
+            db.commit()
+            db.refresh(user)
         
     token_data = {"sub": user.id, "email": user.email, "role": user.role}
     access_token = create_access_token(data=token_data)
@@ -142,6 +150,8 @@ def verify_otp(payload: VerifyOtpRequest, response: Response, db: Session = Depe
     return {
         "success": True,
         "access_token": access_token,
+        "token": access_token,
+        "token_type": "bearer",
         "user": {
             "name": user.full_name,
             "email": user.email,

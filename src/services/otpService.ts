@@ -17,6 +17,8 @@ export interface OtpResponse {
 
 export interface VerifyOtpResponse {
   success: boolean;
+  access_token?: string;
+  token?: string;
   user?: {
     name: string;
     email: string;
@@ -49,14 +51,23 @@ export async function sendOtp(
  *
  * @param mobile - Phone number used for OTP
  * @param otp - The OTP code entered by the user
+ * @param fullName - Author's full name
+ * @param email - Author's email address
+ * @param password - Author's password
  */
 export async function verifyOtp(
   mobile: string,
   otp: string,
+  fullName?: string,
+  email?: string,
+  password?: string,
 ): Promise<VerifyOtpResponse> {
   return call<VerifyOtpResponse>(`${API}.author_verify_otp`, {
     mobile,
     otp,
+    full_name: fullName,
+    email,
+    password,
   });
 }
 

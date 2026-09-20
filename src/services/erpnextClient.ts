@@ -147,9 +147,10 @@ export async function login(
   }
 
   const data = await res.json();
+  const token = data.access_token || data.token;
 
-  if (data.access_token && typeof window !== "undefined") {
-    localStorage.setItem("token", data.access_token);
+  if (token && typeof window !== "undefined") {
+    localStorage.setItem("token", token);
   }
 
   // After login, Frappe returns a CSRF token in a cookie — capture it

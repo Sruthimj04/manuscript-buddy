@@ -28,13 +28,14 @@ type Phase = "details" | "otp";
 const RESEND_COOLDOWN = 30;
 
 function SignupPage() {
-  const { role: activeRole, authStatus } = useApp();
+  const { role: activeRole, authStatus, setAuthSession, login } = useApp();
   const navigate = useNavigate();
 
   const [phase, setPhase] = useState<Phase>("details");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
 
@@ -88,6 +89,9 @@ function SignupPage() {
         e["phone"] = "Please enter a valid phone number with country code.";
       }
     }
+    if (!password.trim()) e["password"] = "Password is required.";
+    else if (password.trim().length < 6) e["password"] = "Password must be at least 6 characters.";
+
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -119,14 +123,27 @@ function SignupPage() {
     setVerifyError(null);
     try {
       const normalized = normalizePhone(phone.trim());
-      const result = await otpService.verifyOtp(normalized, otp);
+      const result = await otpService.verifyOtp(
+        normalized,
+        otp,
+        fullName.trim(),
+        email.trim(),
+        password.trim()
+      );
       if (result.success && result.user) {
-        toast.success("Phone verified! Welcome to LOREM.");
-        // The backend established the session — reload user info
-        // Navigate to dashboard after a short delay to let the session settle
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 500);
+        toast.success("Account created and verified! Welcome to LOREM.");
+        const token = result.access_token || result.token;
+        if (token) {
+          setAuthSession(token, {
+            name: result.user.name,
+            email: result.user.email,
+            role: result.user.role || "author",
+          });
+          void navigate({ to: "/dashboard", replace: true });
+        } else {
+          await login(email.trim(), password.trim(), "author");
+          void navigate({ to: "/dashboard", replace: true });
+        }
       } else {
         setVerifyError("Verification failed. Please try again.");
       }
@@ -223,6 +240,19 @@ function SignupPage() {
                     Include country code (e.g., +91 for India)
                   </p>
                   {errors["phone"] && <p className="text-xs text-destructive">{errors["phone"]}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a password (min. 6 chars)"
+                    aria-invalid={!!errors["password"]}
+                  />
+                  {errors["password"] && <p className="text-xs text-destructive">{errors["password"]}</p>}
                 </div>
 
                 <Button onClick={handleSendOtp} className="w-full" disabled={sending}>
