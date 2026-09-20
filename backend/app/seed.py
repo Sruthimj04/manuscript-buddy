@@ -39,6 +39,8 @@ def seed_database():
                     hashed_password=hash_password(u_data["password"])
                 )
                 db.add(user)
+            elif not existing.hashed_password:
+                existing.hashed_password = hash_password(u_data["password"])
         db.commit()
 
         author_user = db.query(User).filter(User.email == "author@example.com").first()

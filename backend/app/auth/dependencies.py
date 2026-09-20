@@ -9,17 +9,16 @@ from app.auth.security import decode_access_token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 def extract_token(request: Request, token_header: Optional[str] = Depends(oauth2_scheme)) -> Optional[str]:
-    if token_header:
-        return token_header
-    # Fallback to authorization header manually if needed
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        return auth_header.split(" ")[1]
-    # Fallback to sid or access_token cookie
-    token_cookie = request.cookies.get("access_token") or request.cookies.get("sid")
-    if token_cookie:
-        return token_cookie
-    return None
+    tok = token_header
+    if not tok:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            tok = auth_header.split(" ")[1]
+    if not tok:
+        tok = request.cookies.get("access_token") or request.cookies.get("sid")
+    if not tok or tok in ("null", "undefined", "Guest", "none", ""):
+        return None
+    return tok
 
 def get_current_user_optional(
     request: Request,

@@ -29,7 +29,7 @@ export const Route = createFileRoute("/")({
 });
 
 function LoginPage() {
-  const { login, role: activeRole } = useApp();
+  const { login, role: activeRole, loading } = useApp();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,8 +38,8 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (activeRole) void navigate({ to: ROLE_HOME[activeRole], replace: true });
-  }, [activeRole, navigate]);
+    if (!loading && activeRole) void navigate({ to: ROLE_HOME[activeRole], replace: true });
+  }, [loading, activeRole, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

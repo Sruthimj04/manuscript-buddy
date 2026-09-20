@@ -28,7 +28,7 @@ type Phase = "details" | "otp";
 const RESEND_COOLDOWN = 30;
 
 function SignupPage() {
-  const { role: activeRole } = useApp();
+  const { role: activeRole, loading } = useApp();
   const navigate = useNavigate();
 
   const [phase, setPhase] = useState<Phase>("details");
@@ -45,8 +45,8 @@ function SignupPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (activeRole) void navigate({ to: ROLE_HOME[activeRole], replace: true });
-  }, [activeRole, navigate]);
+    if (!loading && activeRole) void navigate({ to: ROLE_HOME[activeRole], replace: true });
+  }, [loading, activeRole, navigate]);
 
   // Resend cooldown timer
   useEffect(() => {

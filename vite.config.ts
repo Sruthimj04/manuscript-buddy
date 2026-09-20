@@ -9,10 +9,11 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   vite: {
     server: {
+      port: 5173,
       proxy: {
-        // Proxy all /api requests to ERPNext backend — eliminates CORS issues
+        // Proxy all /api requests to FastAPI backend on port 8080
         "/api": {
-          target: "http://localhost:8080",
+          target: "http://127.0.0.1:8080",
           changeOrigin: true,
           secure: false,
         },

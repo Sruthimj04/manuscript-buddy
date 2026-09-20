@@ -75,17 +75,12 @@ async def frappe_client_get(request: Request, db: Session = Depends(get_db)):
     data = await get_request_data(request)
     name = data.get("name")
     
+    if not name or name == "Guest":
+        raise HTTPException(status_code=404, detail="User not found")
+
     user = db.query(User).filter((User.email == name) | (User.id == name) | (User.full_name == name)).first()
     if not user:
-        # Default user fallback if not found
-        return {
-            "message": {
-                "name": name or "Guest",
-                "email": name or "guest@example.com",
-                "full_name": name or "Guest",
-                "roles": [{"role": "Manuscript Author"}]
-            }
-        }
+        raise HTTPException(status_code=404, detail="User not found")
         
     role_mapping = {
         "admin": "Manuscript Admin",
