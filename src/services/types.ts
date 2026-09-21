@@ -147,6 +147,8 @@ export interface Paginated<T> {
   totalPages: number;
 }
 
+export type AuthStatus = "checking" | "authenticated" | "unauthenticated";
+
 export interface User {
   name: string;
   email: string;

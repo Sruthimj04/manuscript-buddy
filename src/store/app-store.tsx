@@ -1,25 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import * as service from "@/services/manuscriptService";
 import * as erpnext from "@/services/erpnextClient";
-import type { Manuscript, Role, User } from "@/services/types";
+import type { Manuscript, Role, User, AuthStatus } from "@/services/types";
 
 interface AppState {
   user: User | null;
   role: Role | null;
+  authStatus: AuthStatus;
   manuscripts: Manuscript[];
   loading: boolean;
   error: string | null;
   login: (email: string, password: string, role: Role) => Promise<void>;
+  setAuthSession: (token: string, userData: User) => void;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
 
-/**
- * Map ERPNext roles to frontend role keys.
- * Adjust role names to match your Frappe role setup.
- */
 function resolveRole(roles: string[]): Role {
   if (roles.includes("Manuscript Admin") || roles.includes("System Manager")) return "admin";
   if (roles.includes("Manuscript Editor")) return "editor";
@@ -28,6 +26,7 @@ function resolveRole(roles: string[]): Role {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
   const [manuscripts, setManuscripts] = useState<Manuscript[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,10 +43,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setAuthSession = useCallback((token: string, userData: User) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", token);
+    }
+    setUser(userData);
+    setAuthStatus("authenticated");
+  }, []);
+
   // Check for existing session on mount
   useEffect(() => {
     async function checkSession() {
       try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (!token) {
+          setUser(null);
+          setAuthStatus("unauthenticated");
+          return;
+        }
+
         const info = await erpnext.getUserInfo();
         if (info) {
           setUser({
@@ -55,9 +69,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             email: info.email,
             role: resolveRole(info.roles),
           });
+          setAuthStatus("authenticated");
+        } else {
+          if (typeof window !== "undefined") localStorage.removeItem("token");
+          setUser(null);
+          setAuthStatus("unauthenticated");
         }
       } catch {
-        // No active session — stay on login page
+        if (typeof window !== "undefined") localStorage.removeItem("token");
+        setUser(null);
+        setAuthStatus("unauthenticated");
       } finally {
         setLoading(false);
       }
@@ -67,8 +88,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Refresh manuscripts when user logs in
   useEffect(() => {
-    if (user) void refresh();
-  }, [user, refresh]);
+    if (user && authStatus === "authenticated") void refresh();
+  }, [user, authStatus, refresh]);
 
   const login = useCallback(async (email: string, password: string, role: Role) => {
     setLoading(true);
@@ -76,15 +97,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await erpnext.login(email, password);
       const info = await erpnext.getUserInfo();
       if (info) {
-        // If user selected a specific role, use it; otherwise derive from Frappe roles
         setUser({
           name: info.name,
           email: info.email,
           role: role || resolveRole(info.roles),
         });
+        setAuthStatus("authenticated");
       }
       setError(null);
     } catch (e) {
+      if (typeof window !== "undefined") localStorage.removeItem("token");
+      setUser(null);
+      setAuthStatus("unauthenticated");
       const message = e instanceof Error ? e.message : "Login failed";
       setError(message);
       throw e;
@@ -99,7 +123,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore logout errors
     }
+    if (typeof window !== "undefined") localStorage.removeItem("token");
     setUser(null);
+    setAuthStatus("unauthenticated");
     setManuscripts([]);
   }, []);
 
@@ -107,14 +133,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       role: user?.role ?? null,
+      authStatus,
       manuscripts,
       loading,
       error,
       login,
+      setAuthSession,
       logout,
       refresh,
     }),
-    [user, manuscripts, loading, error, login, logout, refresh],
+    [user, authStatus, manuscripts, loading, error, login, setAuthSession, logout, refresh],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

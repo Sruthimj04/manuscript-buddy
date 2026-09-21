@@ -40,21 +40,22 @@ const NAV_BY_ROLE: Record<Role, { to: string; label: string; icon: typeof Layout
 };
 
 export function AppShell({ children, allow }: { children: ReactNode; allow?: Role[] }) {
-  const { role, user, logout } = useApp();
+  const { role, user, logout, authStatus } = useApp();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const authorized = !!role && (!allow || allow.includes(role));
+  const authorized = authStatus === "authenticated" && !!role && (!allow || allow.includes(role));
 
   useEffect(() => {
-    if (!role) {
+    if (authStatus === "checking") return;
+    if (authStatus === "unauthenticated" || !role) {
       void navigate({ to: "/", replace: true });
     } else if (!authorized) {
       void navigate({ to: ROLE_HOME[role], replace: true });
     }
-  }, [role, authorized, navigate]);
+  }, [authStatus, role, authorized, navigate]);
 
-  if (!role || !authorized) return null;
+  if (authStatus === "checking" || !role || !authorized) return null;
 
   const roleNav = NAV_BY_ROLE[role];
 
