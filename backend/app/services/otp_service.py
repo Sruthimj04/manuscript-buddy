@@ -11,11 +11,11 @@ def send_otp(mobile: str, full_name: str, email: str) -> dict:
     # Standardize mobile format
     clean_mobile = mobile.strip()
     
-    # Check if dev mode is enabled
-    is_dev = settings.ENVIRONMENT == "development" and settings.MSG91_DEV_MODE
+    # Check if dev mode is enabled or SMS gateway key is unconfigured
+    is_dev = settings.MSG91_DEV_MODE or (not settings.MSG91_AUTH_KEY) or (settings.ENVIRONMENT == "development")
     
     if is_dev:
-        # Development mode OTP (e.g. 123456 or dynamic 6-digit stored in memory)
+        # Development / Mock mode OTP
         otp = "123456"
         _otp_store[clean_mobile] = otp
         return {
@@ -56,7 +56,7 @@ def verify_otp(mobile: str, otp: str) -> bool:
     clean_mobile = mobile.strip()
     clean_otp = otp.strip()
     
-    is_dev = settings.ENVIRONMENT == "development" and settings.MSG91_DEV_MODE
+    is_dev = settings.MSG91_DEV_MODE or (not settings.MSG91_AUTH_KEY) or (settings.ENVIRONMENT == "development")
     
     if is_dev:
         if clean_otp == "123456" or _otp_store.get(clean_mobile) == clean_otp:
