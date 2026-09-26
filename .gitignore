@@ -41,3 +41,4 @@ __pycache__/
 uploads/
 backend/uploads/
 backend/sql_app.db
+node_modules
