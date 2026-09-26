@@ -201,9 +201,10 @@ function SubmitPage() {
       await refresh();
       setDialogOpen(false);
       toast.success("Manuscript submitted", { description: `${title} is now pending editor review.` });
-      void navigate({ to: "/manuscript/$id", params: { id: activeManuscript.id } });
-    } catch {
-      toast.error("Submission failed. Please try again.");
+      void navigate({ to: "/dashboard" });
+    } catch (err: any) {
+      console.error("Submission Error: ", err);
+      toast.error(err?.message || "Submission failed. Please try again.");
     } finally {
       setSubmitting(false);
     }

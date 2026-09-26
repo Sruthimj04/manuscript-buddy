@@ -56,23 +56,12 @@ interface Props {
   name?: string;
   manuscripts: Manuscript[];
   loading: boolean;
+  editors?: string[];
   onFilter: (filter: OverviewFilter) => void;
   onOpen: (id: string) => void;
 }
 
-/** Demo staffing figures — the mock service has no editor records. */
-const EDITOR_STATS = [
-  { name: "Nina Okoro", capacity: 10, baseActive: 8, avgReviewDays: 3.2, completed: 14, overdue: 2 },
-  { name: "Daniel Reyes", capacity: 10, baseActive: 5, avgReviewDays: 4.6, completed: 9, overdue: 1 },
-  { name: "Priya Shah", capacity: 8, baseActive: 3, avgReviewDays: 2.8, completed: 11, overdue: 0 },
-  { name: "Marcus Feld", capacity: 8, baseActive: 1, avgReviewDays: 5.4, completed: 4, overdue: 0 },
-];
 
-const DEMO_ACTIVITY = [
-  { actor: "Admin", action: "assigned Daniel Reyes to “Salt & Cartography”", time: "3 h ago", kind: "assign" as const },
-  { actor: "Design Studio", action: "uploaded final cover art for “Nightfall Arithmetic”", time: "Yesterday", kind: "upload" as const },
-  { actor: "System", action: "published “A Grammar of Rivers” to distribution", time: "2 days ago", kind: "publish" as const },
-];
 
 const ACTIVITY_ICON = {
   submit: Upload,
@@ -123,7 +112,7 @@ function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?:
   );
 }
 
-export function AdminOverview({ name, manuscripts, loading, onFilter, onOpen }: Props) {
+export function AdminOverview({ name, manuscripts, loading, editors, onFilter, onOpen }: Props) {
   const [confirm, setConfirm] = useState<{ title: string; description: string; confirmLabel: string } | null>(null);
 
   const metas = manuscripts.map((m) => ({ m, meta: publishingMeta(m) }));
@@ -133,18 +122,22 @@ export function AdminOverview({ name, manuscripts, loading, onFilter, onOpen }: 
   const authors = new Set(manuscripts.map((m) => m.author)).size;
   const overdueCount = metas.filter(({ meta }) => meta.overdue).length;
 
+  const EDITOR_STATS = (editors || []).map((name: string) => {
+    return { name, capacity: 10, baseActive: 0, avgReviewDays: "--", completed: 0, overdue: 0 };
+  });
+
   const kpis = [
     {
       label: "Total Authors",
-      value: 148 + authors,
-      delta: "+12 this month",
+      value: authors,
+      delta: "",
       icon: Users,
       filter: { label: "All manuscripts" } satisfies OverviewFilter,
     },
     {
       label: "Total Editors",
-      value: EDITOR_STATS.length + 12,
-      delta: "3 onboarding",
+      value: EDITOR_STATS.length,
+      delta: "",
       icon: PenLine,
       filter: { label: "Assigned manuscripts", states: ["Pending Editor Review", "Revisions Requested"] } satisfies OverviewFilter,
     },
@@ -347,7 +340,7 @@ export function AdminOverview({ name, manuscripts, loading, onFilter, onOpen }: 
           ) : (
             <ul className="divide-y divide-border">
               {liveActivity.map((a) => {
-                const kind = classify(a.action);
+                const kind = classify(a.action) as keyof typeof ACTIVITY_ICON;
                 const Icon = ACTIVITY_ICON[kind];
                 return (
                   <li key={a.id + a.manuscriptId}>
@@ -373,25 +366,7 @@ export function AdminOverview({ name, manuscripts, loading, onFilter, onOpen }: 
                   </li>
                 );
               })}
-              {DEMO_ACTIVITY.map((a, i) => {
-                const Icon = ACTIVITY_ICON[a.kind];
-                return (
-                  <li key={`demo-${i}`} className="flex items-start gap-3 px-5 py-3">
-                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted">
-                      <Icon className="size-3.5" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm">
-                        <span className="font-medium">{a.actor}</span> {a.action}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <Badge tone={a.kind === "publish" ? "solid" : "muted"}>{a.kind}</Badge>
-                        <span className="text-xs text-muted-foreground">{a.time}</span>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
+
             </ul>
           )}
         </Panel>

@@ -174,6 +174,9 @@ def author_send_otp(mobile, full_name=None, email=None):
         full_name: Author's full name (stored temporarily for account creation)
         email: Author's email address
     """
+    # Bypass CSRF for unauthenticated signup requests
+    frappe.flags.ignore_csrf = True
+
     if not mobile:
         frappe.throw(_("Phone number is required"))
 
@@ -213,6 +216,9 @@ def author_verify_otp(mobile, otp):
     Returns:
         User info on success (name, email, role)
     """
+    # Bypass CSRF for unauthenticated signup requests
+    frappe.flags.ignore_csrf = True
+
     if not mobile or not otp:
         frappe.throw(_("Phone number and OTP are required"))
 
@@ -281,6 +287,8 @@ def author_verify_otp(mobile, otp):
     frappe.cache().delete(cache_key)
 
     # Log the user in (establish Frappe session)
+    from frappe.auth import LoginManager
+    frappe.local.login_manager = LoginManager()
     frappe.local.login_manager.login_as(email)
 
     # Determine role
@@ -309,6 +317,9 @@ def author_resend_otp(mobile):
     Args:
         mobile: Phone number (with country code)
     """
+    # Bypass CSRF for unauthenticated signup requests
+    frappe.flags.ignore_csrf = True
+
     if not mobile:
         frappe.throw(_("Phone number is required"))
 
@@ -922,3 +933,34 @@ def generate_ai_report(title="Untitled", genre="Fiction", secondary_genre="", pa
             "Lexical density and chapter balance fall within the expected band for this category."
         ),
     }
+
+
+@frappe.whitelist()
+def get_editors():
+    """Return a list of users who have the Manuscript Editor or System Manager role."""
+    users = frappe.get_all(
+        "Has Role",
+        filters={"role": ["in", ["Manuscript Editor", "System Manager"]], "parenttype": "User"},
+        fields=["parent"]
+    )
+    user_emails = list(set([u.parent for u in users]))
+    if not user_emails:
+        return []
+        
+    user_docs = frappe.get_all(
+        "User",
+        filters={"name": ["in", user_emails], "enabled": 1, "name": ["!=", "Administrator"]},
+        fields=["name", "full_name"]
+    )
+    
+    editors = []
+    for u in user_docs:
+        # For Administrator, we can exclude or keep it. I excluded it above just for realism,
+        # but let's include it if there's no full_name since we want test users to appear!
+        name = u.full_name or u.name
+        if name not in editors:
+            editors.append(name)
+            
+    editors.sort()
+    return editors
+

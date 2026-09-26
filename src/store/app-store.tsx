@@ -8,6 +8,7 @@ interface AppState {
   role: Role | null;
   authStatus: AuthStatus;
   manuscripts: Manuscript[];
+  editors: string[];
   loading: boolean;
   error: string | null;
   login: (email: string, password: string, role: Role) => Promise<void>;
@@ -28,13 +29,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
   const [manuscripts, setManuscripts] = useState<Manuscript[]>([]);
+  const [editors, setEditors] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setManuscripts(await service.listManuscripts());
+      const [m, e] = await Promise.all([
+        service.listManuscripts(),
+        service.getEditors()
+      ]);
+      setManuscripts(m);
+      setEditors(e);
       setError(null);
     } catch {
       setError("Unable to load manuscripts. Please retry.");
@@ -135,6 +142,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       role: user?.role ?? null,
       authStatus,
       manuscripts,
+      editors,
       loading,
       error,
       login,
@@ -142,7 +150,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       logout,
       refresh,
     }),
-    [user, authStatus, manuscripts, loading, error, login, setAuthSession, logout, refresh],
+    [user, authStatus, manuscripts, editors, loading, error, login, setAuthSession, logout, refresh],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

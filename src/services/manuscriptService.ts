@@ -295,3 +295,12 @@ export async function uploadRevision(
     actor,
   });
 }
+
+export async function getEditors(): Promise<string[]> {
+  try {
+    return await call<string[]>(`${API}.get_editors`);
+  } catch (error) {
+    console.error("Failed to fetch editors", error);
+    return [];
+  }
+}

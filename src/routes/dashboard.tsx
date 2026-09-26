@@ -152,7 +152,7 @@ function DashboardPage() {
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
                         <Button asChild variant="outline" size="sm">
-                          <Link to="/manuscript/$id" params={{ id: m.id }}>
+                          <Link to="/dashboard">
                             View Details
                           </Link>
                         </Button>
@@ -163,7 +163,7 @@ function DashboardPage() {
                         )}
                         {m.state === "Revisions Requested" && (
                           <Button asChild size="sm">
-                            <Link to="/manuscript/$id" params={{ id: m.id }}>
+                            <Link to="/dashboard">
                               Upload Revisions
                             </Link>
                           </Button>

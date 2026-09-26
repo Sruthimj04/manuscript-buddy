@@ -19,6 +19,17 @@ export default defineConfig({
         },
       },
     },
+    preview: {
+      port: 5173,
+      strictPort: true,
+      proxy: {
+        "/api": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).

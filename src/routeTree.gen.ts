@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -22,7 +21,6 @@ import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as AdminEditorsRouteImport } from './routes/admin/editors'
 import { Route as AdminManuscriptsRouteImport } from './routes/admin/manuscripts'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
-import { Route as ManuscriptIdRouteImport } from './routes/manuscript.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -32,11 +30,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -88,16 +81,10 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const ManuscriptIdRoute = ManuscriptIdRouteImport.update({
-  id: '/manuscript/$id',
-  path: '/manuscript/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
@@ -106,12 +93,10 @@ export interface FileRoutesByFullPath {
   '/admin/editors': typeof AdminEditorsRoute
   '/admin/manuscripts': typeof AdminManuscriptsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/manuscript/$id': typeof ManuscriptIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
@@ -121,13 +106,11 @@ export interface FileRoutesByTo {
   '/admin/editors': typeof AdminEditorsRoute
   '/admin/manuscripts': typeof AdminManuscriptsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/manuscript/$id': typeof ManuscriptIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
   '/settings': typeof SettingsRoute
@@ -137,7 +120,6 @@ export interface FileRoutesById {
   '/admin/editors': typeof AdminEditorsRoute
   '/admin/manuscripts': typeof AdminManuscriptsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/manuscript/$id': typeof ManuscriptIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -145,7 +127,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/analytics'
     | '/dashboard'
     | '/editor'
     | '/settings'
@@ -154,12 +135,10 @@ export interface FileRouteTypes {
     | '/admin/editors'
     | '/admin/manuscripts'
     | '/admin/settings'
-    | '/manuscript/$id'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/analytics'
     | '/dashboard'
     | '/editor'
     | '/settings'
@@ -169,12 +148,10 @@ export interface FileRouteTypes {
     | '/admin/editors'
     | '/admin/manuscripts'
     | '/admin/settings'
-    | '/manuscript/$id'
   id:
     | '__root__'
     | '/'
     | '/admin'
-    | '/analytics'
     | '/dashboard'
     | '/editor'
     | '/settings'
@@ -184,20 +161,17 @@ export interface FileRouteTypes {
     | '/admin/editors'
     | '/admin/manuscripts'
     | '/admin/settings'
-    | '/manuscript/$id'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AnalyticsRoute: typeof AnalyticsRoute
   DashboardRoute: typeof DashboardRoute
   EditorRoute: typeof EditorRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   SubmitRoute: typeof SubmitRoute
-  ManuscriptIdRoute: typeof ManuscriptIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -214,13 +188,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -293,13 +260,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/manuscript/$id': {
-      id: '/manuscript/$id'
-      path: '/manuscript/$id'
-      fullPath: '/manuscript/$id'
-      preLoaderRoute: typeof ManuscriptIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -324,13 +284,11 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  AnalyticsRoute: AnalyticsRoute,
   DashboardRoute: DashboardRoute,
   EditorRoute: EditorRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   SubmitRoute: SubmitRoute,
-  ManuscriptIdRoute: ManuscriptIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -6,7 +6,6 @@ import { AdminOverview, type OverviewFilter } from "@/components/pub/AdminOvervi
 import { ManuscriptTable, type TableFilter } from "@/components/pub/admin/ManuscriptTable";
 import { ManuscriptDrawer } from "@/components/pub/admin/ManuscriptDrawer";
 import * as service from "@/services/manuscriptService";
-import { EDITORS } from "@/services/mockData";
 import { type Manuscript, type WorkflowState } from "@/services/types";
 import { useApp } from "@/store/app-store";
 
@@ -23,7 +22,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const { manuscripts, loading, refresh, user } = useApp();
+  const { manuscripts, editors, loading, refresh, user } = useApp();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<TableFilter | null>(null);
   const [drawerId, setDrawerId] = useState<string | null>(null);
@@ -53,6 +52,7 @@ function AdminPage() {
       <AdminOverview
         {...(user?.name ? { name: user.name } : {})}
         manuscripts={manuscripts}
+        editors={editors}
         loading={loading}
         onFilter={applyOverviewFilter}
         onOpen={(id) => setDrawerId(id)}
@@ -68,7 +68,7 @@ function AdminPage() {
           <ManuscriptTable
             manuscripts={manuscripts}
             loading={loading}
-            editors={EDITORS}
+            editors={editors}
             busyId={busyId}
             filter={filter}
             onClearFilter={() => setFilter(null)}
@@ -98,6 +98,8 @@ function AdminPage() {
         manuscript={drawerManuscript}
         open={!!drawerManuscript}
         onOpenChange={(open) => !open && setDrawerId(null)}
+        onApprove={(id) => void run(id, () => service.updateState(id, "Approved", user?.name ?? "Admin", "Admin approved manuscript"), "Manuscript approved")}
+        onPublish={(id) => void run(id, () => service.updateState(id, "Published", user?.name ?? "Admin", "Published final edition"), "Manuscript published")}
       />
     </AppShell>
   );

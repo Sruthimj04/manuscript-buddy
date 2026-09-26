@@ -1,8 +1,7 @@
 import frappe
+frappe.init(site="frontend")
+frappe.connect()
 
-def execute():
-    records = frappe.get_all("Manuscript Submission", fields=["*"])
-    for r in records:
-        print(f"ID: {r.name}, Author Email: {r.get('author_email')}, Owner: {r.owner}, State: {r.state}, Submitted: {r.get('submitted_at')}")
-execute()
-
+docs = frappe.get_all("Manuscript Submission", fields=["name", "title", "state", "author_email"])
+for doc in docs:
+    print(f"MS: {doc.name} | State: {doc.state} | Author: {doc.author_email} | Title: {doc.title}")

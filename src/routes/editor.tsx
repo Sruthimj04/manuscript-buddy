@@ -227,11 +227,6 @@ function EditorPage() {
                     <td className="px-5 py-4 tabular-nums">{m.ai ? `${m.ai.score}%` : "—"}</td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
-                        <Button asChild variant="outline" size="sm">
-                          <Link to="/manuscript/$id" params={{ id: m.id }}>
-                            Open
-                          </Link>
-                        </Button>
                         <Button
                           size="sm"
                           disabled={m.state !== "Pending Editor Review"}

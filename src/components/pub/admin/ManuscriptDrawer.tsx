@@ -33,10 +33,14 @@ export function ManuscriptDrawer({
   manuscript,
   open,
   onOpenChange,
+  onApprove,
+  onPublish,
 }: {
   manuscript: Manuscript | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onApprove?: (id: string) => void;
+  onPublish?: (id: string) => void;
 }) {
   if (!manuscript) return null;
   const meta = publishingMeta(manuscript);
@@ -163,18 +167,13 @@ export function ManuscriptDrawer({
           <Separator />
 
           <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm">
-              <Link to="/manuscript/$id" params={{ id: manuscript.id }}>
-                Open full record
-              </Link>
-            </Button>
             <Button size="sm" variant="outline" onClick={() => toast.success("Editor assignment opened")}>
               <UserCog className="size-4" /> Reassign editor
             </Button>
-            <Button size="sm" variant="outline" onClick={() => toast.success("Approval workflow opened")}>
+            <Button size="sm" variant="outline" onClick={() => onApprove?.(manuscript.id)}>
               <CheckCircle2 className="size-4" /> Approve
             </Button>
-            <Button size="sm" variant="outline" onClick={() => toast.success("Publishing checklist opened")}>
+            <Button size="sm" variant="outline" onClick={() => onPublish?.(manuscript.id)}>
               <Send className="size-4" /> Publish
             </Button>
           </div>
