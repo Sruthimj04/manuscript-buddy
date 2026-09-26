@@ -51,6 +51,27 @@ function SignupPage() {
     }
   }, [authStatus, activeRole, navigate]);
 
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const id = setInterval(() => setResendTimer((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendTimer]);
+
+  const handleResend = useCallback(async () => {
+    if (resendTimer > 0) return;
+    try {
+      const normalized = normalizePhone(phone.trim());
+      await otpService.resendOtp(normalized);
+      setResendTimer(RESEND_COOLDOWN);
+      setVerifyError(null);
+      toast.success("OTP resent to your phone number");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to resend OTP.";
+      setVerifyError(message);
+    }
+  }, [phone, resendTimer]);
+
   if (authStatus === "checking") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
@@ -58,13 +79,6 @@ function SignupPage() {
       </div>
     );
   }
-
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendTimer <= 0) return;
-    const id = setInterval(() => setResendTimer((t) => Math.max(0, t - 1)), 1000);
-    return () => clearInterval(id);
-  }, [resendTimer]);
 
   const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const normalizePhone = (v: string) => {
@@ -155,19 +169,6 @@ function SignupPage() {
     }
   }
 
-  const handleResend = useCallback(async () => {
-    if (resendTimer > 0) return;
-    try {
-      const normalized = normalizePhone(phone.trim());
-      await otpService.resendOtp(normalized);
-      setResendTimer(RESEND_COOLDOWN);
-      setVerifyError(null);
-      toast.success("OTP resent to your phone number");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to resend OTP.";
-      setVerifyError(message);
-    }
-  }, [phone, resendTimer]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
