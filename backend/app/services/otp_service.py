@@ -8,8 +8,8 @@ from app.config import settings
 _otp_store: Dict[str, str] = {}
 
 def send_otp(mobile: str, full_name: str, email: str) -> dict:
-    # Standardize mobile format
-    clean_mobile = mobile.strip()
+    # Standardize mobile format by removing whitespace
+    clean_mobile = mobile.strip().replace(" ", "")
     
     # Check if dev mode is enabled or SMS gateway key is unconfigured
     is_dev = settings.MSG91_DEV_MODE or (not settings.MSG91_AUTH_KEY) or (settings.ENVIRONMENT == "development")
@@ -18,6 +18,7 @@ def send_otp(mobile: str, full_name: str, email: str) -> dict:
         # Development / Mock mode OTP
         otp = "123456"
         _otp_store[clean_mobile] = otp
+        _otp_store[mobile.strip()] = otp
         return {
             "success": True,
             "message": f"Dev Mode: OTP sent to {clean_mobile} (Use OTP: 123456)"
@@ -32,6 +33,7 @@ def send_otp(mobile: str, full_name: str, email: str) -> dict:
         
     otp = f"{random.randint(100000, 999999)}"
     _otp_store[clean_mobile] = otp
+    _otp_store[mobile.strip()] = otp
     
     try:
         url = "https://control.msg91.com/api/v5/otp"
@@ -53,19 +55,20 @@ def send_otp(mobile: str, full_name: str, email: str) -> dict:
         return {"success": False, "message": f"Failed to send OTP via SMS: {str(e)}"}
 
 def verify_otp(mobile: str, otp: str) -> bool:
-    clean_mobile = mobile.strip()
+    clean_mobile = mobile.strip().replace(" ", "")
     clean_otp = otp.strip()
     
     is_dev = settings.MSG91_DEV_MODE or (not settings.MSG91_AUTH_KEY) or (settings.ENVIRONMENT == "development")
     
     if is_dev:
-        if clean_otp == "123456" or _otp_store.get(clean_mobile) == clean_otp:
+        if clean_otp == "123456" or _otp_store.get(clean_mobile) == clean_otp or _otp_store.get(mobile.strip()) == clean_otp:
             return True
         return False
         
-    stored_otp = _otp_store.get(clean_mobile)
+    stored_otp = _otp_store.get(clean_mobile) or _otp_store.get(mobile.strip())
     if stored_otp and stored_otp == clean_otp:
         _otp_store.pop(clean_mobile, None)
+        _otp_store.pop(mobile.strip(), None)
         return True
         
     return False

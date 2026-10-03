@@ -31,14 +31,15 @@ class UserOut(BaseModel):
 
 class SendOtpRequest(BaseModel):
     mobile: str
-    full_name: str
-    email: EmailStr
+    full_name: Optional[str] = ""
+    email: Optional[str] = ""
 
 class VerifyOtpRequest(BaseModel):
     mobile: str
     otp: str
     full_name: Optional[str] = None
     email: Optional[str] = None
+    password: Optional[str] = None
 
 class OtpResponse(BaseModel):
     success: bool

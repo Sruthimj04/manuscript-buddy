@@ -1,14 +1,8 @@
 /**
- * OTP service — calls Frappe backend endpoints for phone verification.
- *
- * The MSG91 credentials are NEVER exposed to the browser.
- * All OTP operations go through the Frappe backend which securely
- * communicates with MSG91.
+ * OTP service — calls FastAPI / ERPNext backend endpoints for phone verification.
  */
 
-import { call } from "./erpnextClient";
-
-const API = "manuscript_management.api";
+const BASE_URL = (import.meta.env["VITE_API_URL"] as string | undefined) ?? "";
 
 export interface OtpResponse {
   success: boolean;
@@ -28,32 +22,47 @@ export interface VerifyOtpResponse {
 
 /**
  * Send an OTP to the author's phone number during signup.
- *
- * @param mobile - Phone number with country code (e.g., +919876543210)
- * @param fullName - Author's full name
- * @param email - Author's email address
  */
 export async function sendOtp(
   mobile: string,
   fullName: string,
   email: string,
 ): Promise<OtpResponse> {
-  return call<OtpResponse>(`${API}.author_send_otp`, {
-    mobile,
-    full_name: fullName,
-    email,
+  const url = `${BASE_URL}/api/v1/auth/otp/send`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ mobile, full_name: fullName, email }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.message && typeof data.message === "object" ? data.message : data;
+    }
+  } catch {
+    // Fall through to compat endpoint
+  }
+
+  // Fallback to compatibility endpoint
+  const compatUrl = `${BASE_URL}/api/method/manuscript_management.api.author_send_otp`;
+  const compatRes = await fetch(compatUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ mobile, full_name: fullName, email }),
   });
+
+  if (!compatRes.ok) {
+    const errData = await compatRes.json().catch(() => ({}));
+    throw new Error(errData.detail || errData.message || `Failed to send OTP (${compatRes.status})`);
+  }
+
+  const compatData = await compatRes.json();
+  return compatData.message || compatData;
 }
 
 /**
  * Verify the OTP entered by the user.
- * On success, the backend creates the user account and establishes a session.
- *
- * @param mobile - Phone number used for OTP
- * @param otp - The OTP code entered by the user
- * @param fullName - Author's full name
- * @param email - Author's email address
- * @param password - Author's password
  */
 export async function verifyOtp(
   mobile: string,
@@ -62,22 +71,56 @@ export async function verifyOtp(
   email?: string,
   password?: string,
 ): Promise<VerifyOtpResponse> {
-  return call<VerifyOtpResponse>(`${API}.author_verify_otp`, {
-    mobile,
-    otp,
-    full_name: fullName,
-    email,
-    password,
+  const url = `${BASE_URL}/api/v1/auth/otp/verify`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        mobile,
+        otp,
+        full_name: fullName,
+        email,
+        password,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.message && typeof data.message === "object" ? data.message : data;
+    }
+  } catch {
+    // Fall through to compat endpoint
+  }
+
+  // Fallback to compatibility endpoint
+  const compatUrl = `${BASE_URL}/api/method/manuscript_management.api.author_verify_otp`;
+  const compatRes = await fetch(compatUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      mobile,
+      otp,
+      full_name: fullName,
+      email,
+      password,
+    }),
   });
+
+  if (!compatRes.ok) {
+    const errData = await compatRes.json().catch(() => ({}));
+    throw new Error(errData.detail || errData.message || `Invalid or expired OTP (${compatRes.status})`);
+  }
+
+  const compatData = await compatRes.json();
+  return compatData.message || compatData;
 }
 
 /**
  * Resend OTP to the same phone number.
- *
- * @param mobile - Phone number to resend OTP to
  */
 export async function resendOtp(mobile: string): Promise<OtpResponse> {
-  return call<OtpResponse>(`${API}.author_resend_otp`, {
-    mobile,
-  });
+  return sendOtp(mobile, "", "");
 }
+
+export default { sendOtp, verifyOtp, resendOtp };
