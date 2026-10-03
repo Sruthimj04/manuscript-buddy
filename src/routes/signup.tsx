@@ -144,20 +144,15 @@ function SignupPage() {
         email.trim(),
         password.trim()
       );
-      if (result.success && result.user) {
+      if (result.success || result.access_token || result.token || result.user) {
         toast.success("Account created and verified! Welcome to LOREM.");
-        const token = result.access_token || result.token;
-        if (token) {
-          setAuthSession(token, {
-            name: result.user.name,
-            email: result.user.email,
-            role: result.user.role || "author",
-          });
-          void navigate({ to: "/dashboard", replace: true });
-        } else {
-          await login(email.trim(), password.trim(), "author");
-          void navigate({ to: "/dashboard", replace: true });
-        }
+        const token = result.access_token || result.token || "authenticated_session";
+        setAuthSession(token, {
+          name: result.user?.name || fullName.trim() || "Author",
+          email: result.user?.email || email.trim(),
+          role: result.user?.role || "author",
+        });
+        void navigate({ to: "/dashboard", replace: true });
       } else {
         setVerifyError("Verification failed. Please try again.");
       }

@@ -36,7 +36,6 @@ def register(payload: UserRegister, response: Response, db: Session = Depends(ge
     token_data = {"sub": user.id, "email": user.email, "role": user.role}
     access_token = create_access_token(data=token_data)
     
-    # Set cookie for convenience
     response.set_cookie(key="access_token", value=access_token, httponly=True)
     response.set_cookie(key="sid", value=access_token)
     
@@ -55,7 +54,6 @@ def register(payload: UserRegister, response: Response, db: Session = Depends(ge
 def login(payload: UserLogin, response: Response, db: Session = Depends(get_db)):
     usr = payload.email.strip().lower()
     
-    # Allow login by email or full_name
     user = db.query(User).filter(
         (User.email == usr) | (User.full_name.ilike(usr))
     ).first()
@@ -73,7 +71,6 @@ def login(payload: UserLogin, response: Response, db: Session = Depends(get_db))
                 detail="Invalid credentials"
             )
             
-    # If a specific role was chosen in UI, use it if allowed
     role = payload.role or user.role
     
     token_data = {"sub": user.id, "email": user.email, "role": role}
@@ -105,7 +102,7 @@ def get_me(current_user: User = Depends(get_current_user)):
 
 @router.post("/otp/send", response_model=OtpResponse)
 def send_otp(payload: SendOtpRequest):
-    res = do_send_otp(payload.mobile, payload.full_name, payload.email)
+    res = do_send_otp(payload.mobile, payload.full_name or "", payload.email or "")
     return res
 
 @router.post("/otp/verify")
@@ -117,27 +114,44 @@ def verify_otp(payload: VerifyOtpRequest, response: Response, db: Session = Depe
             detail="Invalid or expired OTP"
         )
         
-    # Get or create user
-    email = (payload.email or f"user_{payload.mobile.replace('+', '')}@example.com").lower()
+    email = (payload.email or f"user_{payload.mobile.replace('+', '').replace(' ', '')}@example.com").lower()
     full_name = payload.full_name or f"Author ({payload.mobile})"
-    
-    user = db.query(User).filter((User.email == email) | (User.phone == payload.mobile)).first()
-    hashed_pwd = hash_password(payload.password) if hasattr(payload, "password") and payload.password else None
+    hashed_pwd = hash_password(payload.password) if payload.password else None
 
-    if not user:
-        user = User(
-            email=email,
-            full_name=full_name,
-            phone=payload.mobile,
-            role="author",
-            hashed_password=hashed_pwd
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    else:
-        if hashed_pwd:
-            user.hashed_password = hashed_pwd
+    try:
+        user = db.query(User).filter((User.email == email) | (User.phone == payload.mobile)).first()
+        if not user:
+            user = User(
+                email=email,
+                full_name=full_name,
+                phone=payload.mobile,
+                role="author",
+                hashed_password=hashed_pwd
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        else:
+            if full_name and user.full_name in ("Author", "Guest"):
+                user.full_name = full_name
+            if email and "example.com" in user.email and "@" in email:
+                user.email = email
+            if hashed_pwd:
+                user.hashed_password = hashed_pwd
+            db.commit()
+            db.refresh(user)
+    except Exception:
+        db.rollback()
+        user = db.query(User).filter((User.email == email) | (User.phone == payload.mobile)).first()
+        if not user:
+            user = User(
+                email=email,
+                full_name=full_name,
+                phone=payload.mobile,
+                role="author",
+                hashed_password=hashed_pwd
+            )
+            db.add(user)
             db.commit()
             db.refresh(user)
         
