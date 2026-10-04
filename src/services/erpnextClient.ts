@@ -1,24 +1,18 @@
 /**
- * Low-level Frappe/ERPNext API client.
+ * Low-level Frappe/ERPNext & FastAPI API client.
  *
- * Wraps `fetch()` for calling Frappe's `api/method/` endpoints.
+ * Wraps `fetch()` for calling backend endpoints.
  * Uses cookie-based session auth (`credentials: "include"`).
- *
- * Configuration: set `VITE_ERPNEXT_URL` in your `.env` file.
- * Example: VITE_ERPNEXT_URL=http://localhost:8000
  */
 
-// In dev mode, Vite proxy forwards /api/* to ERPNext (configured in vite.config.ts).
-// In production, set VITE_ERPNEXT_URL to the ERPNext origin, or use a reverse proxy.
 const BASE_URL = (import.meta.env["VITE_API_URL"] as string | undefined) ?? (import.meta.env["VITE_ERPNEXT_URL"] as string | undefined) ?? "";
-
-// ── Core request helper ──────────────────────────────────────────────────── //
 
 interface FrappeResponse<T = unknown> {
   message: T;
   exc_type?: string;
   exception?: string;
   _server_messages?: string;
+  detail?: string | Record<string, unknown>;
 }
 
 export class FrappeError extends Error {
@@ -70,13 +64,17 @@ async function request<T = unknown>(
 
     try {
       const body = (await res.json()) as FrappeResponse;
-      if (body._server_messages) {
+      if (body.detail) {
+        errorMessage = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      } else if (body._server_messages) {
         const msgs = JSON.parse(body._server_messages);
         errorMessage = Array.isArray(msgs)
           ? msgs.map((m: string) => JSON.parse(m)?.message ?? m).join("; ")
           : String(msgs);
       } else if (body.exception) {
         errorMessage = body.exception;
+      } else if (body.message) {
+        errorMessage = typeof body.message === "string" ? body.message : JSON.stringify(body.message);
       }
       excType = body.exc_type;
     } catch {
@@ -86,8 +84,11 @@ async function request<T = unknown>(
     throw new FrappeError(errorMessage, res.status, excType);
   }
 
-  const json = (await res.json()) as FrappeResponse<T>;
-  return json.message;
+  const json = (await res.json()) as any;
+  if (json && typeof json === "object" && "message" in json) {
+    return json.message as T;
+  }
+  return json as T;
 }
 
 // ── CSRF token management ─────────────────────────────────────────────────── //
@@ -96,7 +97,6 @@ let csrfToken = "";
 
 function getCsrfToken(): string {
   if (csrfToken) return csrfToken;
-  // Frappe sets this cookie after login
   const match = document.cookie.match(/csrf_token=([^;]+)/);
   return match?.[1] ?? "";
 }
@@ -107,12 +107,6 @@ export function setCsrfToken(token: string) {
 
 // ── Public API ────────────────────────────────────────────────────────────── //
 
-/**
- * Call a Frappe whitelisted method.
- *
- * Usage:
- *   const result = await call<Manuscript[]>("manuscript_management.api.list_manuscripts", { page: 1 });
- */
 export async function call<T = unknown>(
   method: string,
   args: Record<string, unknown> = {},
@@ -123,9 +117,6 @@ export async function call<T = unknown>(
   });
 }
 
-/**
- * Login to Frappe with email/password credentials.
- */
 export async function login(
   usr: string,
   pwd: string,
@@ -140,7 +131,7 @@ export async function login(
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new FrappeError(
-      body?.message || "Login failed",
+      body?.detail || body?.message || "Login failed",
       res.status,
       body?.exc_type,
     );
@@ -153,16 +144,12 @@ export async function login(
     localStorage.setItem("token", token);
   }
 
-  // After login, Frappe returns a CSRF token in a cookie — capture it
   const match = document.cookie.match(/csrf_token=([^;]+)/);
   if (match?.[1]) setCsrfToken(match[1]);
 
   return data;
 }
 
-/**
- * Logout from Frappe.
- */
 export async function logout(): Promise<void> {
   if (typeof window !== "undefined") {
     localStorage.removeItem("token");
@@ -171,10 +158,6 @@ export async function logout(): Promise<void> {
   setCsrfToken("");
 }
 
-/**
- * Get the currently logged-in Frappe user.
- * Returns the user email or null if not logged in.
- */
 export async function getLoggedUser(): Promise<string | null> {
   const token = getStoredToken();
   if (!token) return null;
@@ -196,9 +179,6 @@ export async function getLoggedUser(): Promise<string | null> {
   }
 }
 
-/**
- * Get user info (full_name, roles) for the logged-in user.
- */
 export async function getUserInfo(): Promise<{
   name: string;
   email: string;

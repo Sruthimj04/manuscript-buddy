@@ -117,36 +117,51 @@ async def author_verify_otp(request: Request, response: Response, db: Session = 
     mobile = str(data.get("mobile", ""))
     otp = str(data.get("otp", ""))
     full_name = str(data.get("full_name", data.get("fullName", "Author")))
-    email = str(data.get("email", f"user_{mobile.replace('+', '')}@example.com")).lower()
+    email = str(data.get("email", f"user_{mobile.replace('+', '').replace(' ', '')}@example.com")).lower()
     password = str(data.get("password", data.get("pwd", "")))
     
     is_valid = do_verify_otp(mobile, otp)
     if not is_valid:
-        raise HTTPException(status_code=400, detail="Invalid OTP")
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
         
-    user = db.query(User).filter((User.email == email) | (User.phone == mobile)).first()
-    hashed_pwd = hash_password(password) if password else (user.hashed_password if user else None)
+    hashed_pwd = hash_password(password) if password else None
 
-    if not user:
-        user = User(
-            email=email,
-            full_name=full_name,
-            phone=mobile,
-            role="author",
-            hashed_password=hashed_pwd
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    else:
-        if full_name and user.full_name in ("Author", "Guest"):
-            user.full_name = full_name
-        if email and "example.com" in user.email and "@" in email:
-            user.email = email
-        if hashed_pwd:
-            user.hashed_password = hashed_pwd
-        db.commit()
-        db.refresh(user)
+    try:
+        user = db.query(User).filter((User.email == email) | (User.phone == mobile)).first()
+        if not user:
+            user = User(
+                email=email,
+                full_name=full_name,
+                phone=mobile,
+                role="author",
+                hashed_password=hashed_pwd
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        else:
+            if full_name and user.full_name in ("Author", "Guest"):
+                user.full_name = full_name
+            if email and "example.com" in user.email and "@" in email:
+                user.email = email
+            if hashed_pwd:
+                user.hashed_password = hashed_pwd
+            db.commit()
+            db.refresh(user)
+    except Exception:
+        db.rollback()
+        user = db.query(User).filter((User.email == email) | (User.phone == mobile)).first()
+        if not user:
+            user = User(
+                email=email,
+                full_name=full_name,
+                phone=mobile,
+                role="author",
+                hashed_password=hashed_pwd
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
         
     token_data = {"sub": user.id, "email": user.email, "role": user.role}
     access_token = create_access_token(data=token_data)
